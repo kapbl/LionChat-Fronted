@@ -1,7 +1,17 @@
 syntax = "proto3";
 
 message ChatMessage {
-  string sender = 1;
-  string content = 2;
-  int64 timestamp = 3;
-} 
+  string avatar = 1;
+  string fromUsername = 2;
+  string from = 3;
+  string to = 4;
+  string content = 5;
+  int32 contentType = 6; // 1=文字, 2=文件, 3=图片, 4=语音, 5=视频, 6=WebRTC信令
+  string type = 7;
+  int32 messageType = 8; // 1=单聊, 2=群聊
+  string url = 9;
+  string fileSuffix = 10;
+  bytes file = 11;
+  int64 timestamp = 12;
+  int32 duration = 13; // 语音消息时长（秒）
+}

@@ -3,6 +3,11 @@
         <div class="chat-header chat-header-center">
             <span v-if="currentChatName">{{ currentChatName }}</span>
             <span v-else>select</span>
+            <div v-if="currentChatName" class="header-actions">
+                <button @click="startVoiceCall" class="voice-call-btn" title="语音通话">
+                    📞
+                </button>
+            </div>
         </div>
         <div class="messages">
             <div v-for="(msg, idx) in messages" :key="idx" :class="['message', msg.from === myUuid ? 'self' : 'other']">
@@ -69,6 +74,17 @@
                 <button class="close-preview-btn" @click="closeVideoPreview">×</button>
             </div>
         </div>
+        
+        <!-- WebRTC语音通话组件 -->
+        <WebRTCVoiceCall
+            v-if="MessageType"
+            ref="voiceCallRef"
+            :my-uuid="myUuid"
+            :my-name="myName"
+            :message-type="MessageType"
+            @call-started="onCallStarted"
+            @call-ended="onCallEnded"
+        />
     </div>
 </template>
 
@@ -80,6 +96,7 @@ import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
 import { toUuid,currentChatTargetName,currentChatID } from './state.js'
+import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
@@ -89,7 +106,7 @@ const input = ref('')
 const userinfo = JSON.parse(localStorage.getItem(`userinfo_${sessionKey}`) || '{}')
 const myName = userinfo.nickname || '我'
 const myUuid = userinfo.uuid
-let MessageType = null
+const MessageType = ref(null)
 let ws = null
 const wsConnected = ref(false)
 // 当前消息类型，1=单聊，2=群聊
@@ -126,6 +143,8 @@ const showImagePreview = ref(false)
 const showVideoPreview = ref(false)
 const previewImageUrl = ref('')
 const previewVideoUrl = ref('')
+// WebRTC语音通话
+const voiceCallRef = ref(null)
 async function handleFileSelect(event) {
     const file = event.target.files[0]
     if (!file) return
@@ -143,7 +162,7 @@ async function handleFileSelect(event) {
     reader.readAsArrayBuffer(file)
 }
 function sendFileMessage(fileData) {
-    if (!MessageType || !wsConnected.value) return
+    if (!MessageType.value || !wsConnected.value) return
     
     let contentType = 2; // 默认为文件类型
     let type = 'file';
@@ -172,7 +191,7 @@ function sendFileMessage(fileData) {
         fileSuffix : fileData.suffix,
         file: fileData.fileBuffer,
     }
-    const messageBuffer = MessageType.encode(MessageType.create(msgObj)).finish()
+    const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
     if (!chatMessages.value[toUuid.value]) chatMessages.value[toUuid.value] = []
     chatMessages.value[toUuid.value].push({
@@ -212,7 +231,7 @@ async function toggleRecording() {
     }
 }
 function sendVoiceMessage(voiceData) {
-    if (!MessageType || !wsConnected.value) return
+    if (!MessageType.value || !wsConnected.value) return
     const msgObj = {
         ...voiceData,
         avatar: '',
@@ -227,7 +246,7 @@ function sendVoiceMessage(voiceData) {
         file: voiceData.audioBuffer
     }
 
-    const messageBuffer = MessageType.encode(MessageType.create(msgObj)).finish()
+    const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
 
     if (!chatMessages.value[toUuid.value]) chatMessages.value[toUuid.value] = []
@@ -264,8 +283,8 @@ function saveUnreadCounts() {
 onMounted(async () => {
     // 加载 proto
     const root = await protobuf.load('/message.proto')
-    MessageType = root.lookup('protocol.Message')
-    initWebSocket(sessionKey, handleWebSocketMessage, myUuid, MessageType)
+    MessageType.value = root.lookup('protocol.Message')
+    initWebSocket(sessionKey, handleWebSocketMessage, myUuid, MessageType.value)
 
     ws = getWebSocket()
     if (ws) {
@@ -278,10 +297,10 @@ onMounted(async () => {
 const fragmentManager = new Map(); // 存储待重组的分片
 // 处理 WebSocket 消息
 function handleWebSocketMessage(event) {
-    if (!MessageType) return;
+    if (!MessageType.value) return;
     
     const buffer = new Uint8Array(event.data);
-    const decodedBuffer = MessageType.decode(buffer);
+    const decodedBuffer = MessageType.value.decode(buffer);
     var decoded = decodedBuffer;
     if (decodedBuffer.isFragmented) {
         // 处理分片消息
@@ -315,6 +334,9 @@ function handleWebSocketMessage(event) {
                 break;
             case 5: // 视频消息
                 handleVideoMessage(decoded, chatId, isPrivateMessage);
+                break;
+            case 6: // WebRTC信令消息
+                handleWebRTCSignaling(decoded);
                 break;
             case 8: // 好友请求
                 handleFriendRequest(decoded);
@@ -395,7 +417,7 @@ function reassembleMessage(fragments) {
     
     // 关键步骤：反序列化protobuf数据恢复原始消息
     try {
-        const originalMessage = MessageType.decode(serializedData);
+        const originalMessage = MessageType.value.decode(serializedData);
         originalMessage.isFragmented = false;
         console.log(originalMessage)
         return originalMessage;
@@ -464,6 +486,35 @@ function handleFriendResponse(decoded) {
         from: decoded.from
     };
     showFriendReplyRequest.value = true;
+}
+
+// WebRTC信令消息处理
+function handleWebRTCSignaling(decoded) {
+    if (voiceCallRef.value) {
+        voiceCallRef.value.handleSignalingMessage(decoded);
+    }
+}
+
+// 发起语音通话
+function startVoiceCall() {
+    if (!toUuid.value || !currentChatName.value) {
+        alert('请先选择聊天对象');
+        return;
+    }
+    
+    if (voiceCallRef.value) {
+        voiceCallRef.value.startCall(toUuid.value, currentChatName.value);
+    }
+}
+
+// 通话开始事件
+function onCallStarted() {
+    console.log('语音通话已开始');
+}
+
+// 通话结束事件
+function onCallEnded() {
+    console.log('语音通话已结束');
 }
 
 // 辅助函数
@@ -544,7 +595,7 @@ function formatTime(ts) {
 }
 // 发送消息
 function sendMessage() {
-    if (!input.value.trim() || !MessageType || !wsConnected.value) return
+    if (!input.value.trim() || !MessageType.value || !wsConnected.value) return
     if (!toUuid.value.trim()) {
         alert('请先选择聊天对象')
         return
@@ -563,12 +614,12 @@ function sendMessage() {
         fileSuffix: '',
         file: new Uint8Array(),
     }
-    const errMsg = MessageType.verify(msgObj)
+    const errMsg = MessageType.value.verify(msgObj)
     if (errMsg) {
         alert('消息格式错误: ' + errMsg)
         return
     }
-    const messageBuffer = MessageType.encode(MessageType.create(msgObj)).finish()
+    const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
     // 本地也显示消息
     if (!chatMessages.value[toUuid.value]) chatMessages.value[toUuid.value] = []
@@ -667,12 +718,48 @@ function closeVideoPreview() {
 
 .chat-header-center {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     text-align: center;
     font-size: 20px;
     font-weight: bold;
     letter-spacing: 2px;
+    position: relative;
+}
+
+.chat-header-center > span {
+    flex: 1;
+    text-align: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.voice-call-btn {
+    background: #42b983;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-call-btn:hover {
+    background: #369870;
+    transform: scale(1.1);
+}
+
+.voice-call-btn:active {
+    transform: scale(0.95);
 }
 
 .messages {

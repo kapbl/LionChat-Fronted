@@ -29,7 +29,7 @@ export function initWebSocket(sessionKey = 'default', onMessageCallback, myUuid,
                 }
                 const errMsg = MessageType.verify(msgObj)
                 if (errMsg) {
-                    alert('消息格式错误: ' + errMsg)
+                    console.error('Message verification failed:', errMsg)
                     return
                 }
                 const messageBuffer = MessageType.encode(MessageType.create(msgObj)).finish()
