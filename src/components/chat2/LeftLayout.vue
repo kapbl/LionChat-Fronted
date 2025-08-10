@@ -28,7 +28,10 @@
             <div class="nav-item" :class="{ active: navTab === 'group' }" @click="handleNavClick('group')">
                 <span class="nav-icon"></span> 群组
             </div>
-            <div class="nav-item"><span class="nav-icon"></span>此刻</div>
+            <div class="nav-item" :class="{ active: navTab === 'moment' }" @click="handleNavClick('moment')">
+                <span class="nav-icon"></span>此刻
+                <div v-if="hasUnreadMoments" class="moment-notification-dot"></div>
+            </div>
             <div class="nav-item" @click="showSettings = true"><span class="nav-icon"></span>设置</div>
         </div>
     </div>
@@ -107,6 +110,62 @@
                 <div v-if="group.unread > 0" class="group_unread-bubble">{{ group.unread }}</div>
             </div>
         </div>
+        <div v-else-if="navTab === 'moment'">
+            <div class="moment-list-title-row">
+                <div class="moment-list-title">此刻</div>
+                <button class="add-moment-btn" @click="showAddMoment = true">发布动态</button>
+            </div>
+            <div v-if="showAddMoment" class="add-moment-dialog">
+                <textarea v-model="newMomentContent" placeholder="分享你此刻在做什么..." class="add-moment-textarea"
+                    @keyup.ctrl.enter="publishMoment" maxlength="200"></textarea>
+                <div class="moment-actions">
+                    <span class="char-count">{{ newMomentContent.length }}/200</span>
+                    <button class="publish-moment-btn" @click="publishMoment" :disabled="!newMomentContent.trim() || publishingMoment">发布</button>
+                    <button class="cancel-moment-btn" @click="cancelAddMoment">取消</button>
+                </div>
+            </div>
+            <div class="moment-list">
+                <div v-for="moment in moments" :key="moment.id" class="moment-item">
+                    <div class="moment-header">
+                        <div class="moment-avatar">
+                            <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="" width="32" height="32">
+                                <mask id="moment-avatar" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+                                    <rect width="36" height="36" rx="72" fill="#FFFFFF"></rect>
+                                </mask>
+                                <g mask="url(#moment-avatar)">
+                                    <rect width="36" height="36" fill="#49007e"></rect>
+                                    <rect x="0" y="0" width="36" height="36" transform="translate(7 1) rotate(53 18 18) scale(1.2)"
+                                        fill="#ff7d10" rx="6"></rect>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="moment-info">
+                            <div class="moment-author">{{ moment.author }}</div>
+                            <div class="moment-time">{{ formatTime(moment.timestamp) }}</div>
+                        </div>
+                    </div>
+                    <div class="moment-content">{{ moment.content }}</div>
+                    <div class="moment-actions">
+                        <button class="moment-action-btn" @click="likeMoment(moment)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span>{{ moment.likes || 0 }}</span>
+                        </button>
+                        <button class="moment-action-btn" @click="commentMoment(moment)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>{{ moment.comments || 0 }}</span>
+                        </button>
+                    </div>
+                </div>
+                <div v-if="moments.length === 0" class="empty-moments">
+                    <div class="empty-icon">📝</div>
+                    <div class="empty-text">还没有动态，快来发布第一条吧！</div>
+                </div>
+            </div>
+        </div>
         <div v-if="showFriendRequest" class="friend-request-overlay">
             <div class="friend-request-dialog">
                 <h3>好友请求</h3>
@@ -143,6 +202,10 @@
                         <button class="tab-btn" :class="{ active: settingsTab === 'password' }"
                             @click="settingsTab = 'password'">
                             修改密码
+                        </button>
+                        <button class="tab-btn" :class="{ active: settingsTab === 'theme' }"
+                            @click="settingsTab = 'theme'">
+                            主题设置
                         </button>
                     </div>
 
@@ -188,6 +251,53 @@
                             <button @click="resetPasswordForm" class="cancel-btn">重置</button>
                         </div>
                     </div>
+
+                    <!-- 主题设置 -->
+                    <div v-if="settingsTab === 'theme'" class="settings-panel">
+                        <div class="theme-section">
+                            <h4>外观模式</h4>
+                            <div class="theme-options">
+                                <div class="theme-option" :class="{ active: currentTheme === 'light' }" @click="setTheme('light')">
+                                    <div class="theme-preview light-preview">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-content"></div>
+                                    </div>
+                                    <span>浅色模式</span>
+                                </div>
+                                <div class="theme-option" :class="{ active: currentTheme === 'dark' }" @click="setTheme('dark')">
+                                    <div class="theme-preview dark-preview">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-content"></div>
+                                    </div>
+                                    <span>深色模式</span>
+                                </div>
+                                <div class="theme-option" :class="{ active: currentTheme === 'eye-care' }" @click="setTheme('eye-care')">
+                                    <div class="theme-preview eye-care-preview">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-content"></div>
+                                    </div>
+                                    <span>护眼模式</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="theme-section">
+                            <h4>个性化设置</h4>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" v-model="autoTheme" @change="toggleAutoTheme">
+                                    跟随系统主题
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" v-model="eyeCareMode" @change="toggleEyeCareMode">
+                                    护眼模式增强
+                                </label>
+                                <small>降低蓝光，减少眼部疲劳</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,9 +305,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted} from 'vue'
 import { useRoute } from 'vue-router'
-import { toUuid,currentChatTargetName,currentChatID} from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments } from './state.js'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
@@ -217,29 +327,18 @@ const showCreateGroup = ref(false)
 const createGroupName = ref('')
 const creatingGroup = ref(false)
 const joiningGroup = ref(false)
-// // 好友列表，头像类型随机
-const friends = ref([])
-// // 群聊列表，头像类型随机
-const groups = ref([])
+// 好友列表和群聊列表现在从 state.js 导入
 // 当前消息类型，1=单聊，2=群聊
 const messageType = ref(1)
-// 加好友请求消息框
-const showFriendRequest = ref(false)
-const friendRequestInfo = ref({
-    fromUsername: '',
-    content: '',
-    from: ''
-})
-// 加好友请求回复消息框
-const showFriendReplyRequest = ref(false)
-const friendResponseInfo = ref({
-    fromUsername: '',
-    content: '',
-    from: ''
-})
+// 好友请求相关变量已移动到 state.js 中
 // 设置相关
 const showSettings = ref(false)
-const settingsTab = ref('profile') // 'profile' 或 'password'
+const settingsTab = ref('profile') // 'profile'、'password' 或 'theme'
+
+// 主题相关
+const currentTheme = ref(localStorage.getItem('chat-theme') || 'light')
+const autoTheme = ref(localStorage.getItem('chat-auto-theme') === 'true')
+const eyeCareMode = ref(localStorage.getItem('chat-eye-care') === 'true')
 const updatingProfile = ref(false)
 const updatingPassword = ref(false)
 // 个人信息表单
@@ -254,10 +353,20 @@ const passwordForm = ref({
     newPassword: '',
     confirmPassword: ''
 })
+// 此刻功能相关
+const showAddMoment = ref(false)
+const newMomentContent = ref('')
+const publishingMoment = ref(false)
+const moments = ref([])
 // const currentChatID = ref(0)
 onMounted(async () => {
     getFriendList()
     getGroupList()
+    
+    // 初始化主题设置
+    applyTheme(currentTheme.value)
+    applyEyeCareMode()
+    setupThemeListener()
 })
 
 function handleNavClick(tab) {
@@ -266,6 +375,10 @@ function handleNavClick(tab) {
         getFriendList()
     } else if (tab === 'group') {
         getGroupList()
+    } else if (tab === 'moment') {
+        getMomentList()
+        // 清除未读时刻状态
+        hasUnreadMoments.value = false
     }
 }
 async function searchFriend() {
@@ -436,7 +549,7 @@ function selectFriend(friend) {
     currentChatTargetName.value = friend.name
     console.log(friend)
     // 保存未读消息计数到localStorage
-    // saveUnreadCounts()
+    saveUnreadCounts()
 }
 // 选择一个群组
 function selectGroup(group) {
@@ -498,6 +611,8 @@ async function handleFriendResponse() {
                 target_uuid: friendResponseInfo.value.from
             })
         });
+        // 刷新好友列表
+        getFriendList()
     } catch (e) {
         alert('操作失败: ' + e.message);
     } finally {
@@ -651,6 +766,186 @@ function resetPasswordForm() {
     }
 }
 
+// 主题相关方法
+function setTheme(theme) {
+    currentTheme.value = theme
+    localStorage.setItem('chat-theme', theme)
+    applyTheme(theme)
+}
+
+function toggleAutoTheme() {
+    localStorage.setItem('chat-auto-theme', autoTheme.value.toString())
+    if (autoTheme.value) {
+        // 检测系统主题
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        setTheme(systemTheme)
+    }
+}
+
+function toggleEyeCareMode() {
+    localStorage.setItem('chat-eye-care', eyeCareMode.value.toString())
+    applyEyeCareMode()
+}
+
+function applyTheme(theme) {
+    const root = document.documentElement
+    root.setAttribute('data-theme', theme)
+    
+    // 移除之前的主题类
+    root.classList.remove('light-theme', 'dark-theme', 'eye-care-theme')
+    
+    // 添加新的主题类
+    root.classList.add(`${theme}-theme`)
+}
+
+function applyEyeCareMode() {
+    const root = document.documentElement
+    if (eyeCareMode.value) {
+        root.classList.add('eye-care-enhanced')
+    } else {
+        root.classList.remove('eye-care-enhanced')
+    }
+}
+
+// 监听系统主题变化
+function setupThemeListener() {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    mediaQuery.addEventListener('change', (e) => {
+        if (autoTheme.value) {
+            const systemTheme = e.matches ? 'dark' : 'light'
+            setTheme(systemTheme)
+        }
+    })
+}
+
+// 此刻功能相关方法
+// 发布动态
+async function publishMoment() {
+    const content = newMomentContent.value.trim()
+    if (!content) {
+        alert('请输入动态内容')
+        return
+    }
+
+    publishingMoment.value = true
+    try {
+        // 这里可以添加实际的API调用
+        const resp = await fetch('http://localhost/v1/api/moment/createMoment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                content: content
+            })
+        })
+        //const data = await resp.json()
+        // if (data.code === 200) {
+        //     alert('动态发布成功')
+        // } else {
+        //     throw new Error(data.msg || '发布失败')
+        // }
+
+        // 暂时使用本地存储模拟
+        const newMoment = {
+            id: Date.now(),
+            author: myName,
+            content: content,
+            timestamp: new Date().toISOString()
+        }
+        
+        moments.value.unshift(newMoment)
+        
+        // 保存到localStorage
+        const savedMoments = JSON.parse(localStorage.getItem(`moments_${sessionKey}`) || '[]')
+        savedMoments.unshift(newMoment)
+        localStorage.setItem(`moments_${sessionKey}`, JSON.stringify(savedMoments))
+        
+        alert('动态发布成功')
+        cancelAddMoment()
+    } catch (e) {
+        alert('发布失败: ' + e.message)
+    } finally {
+        publishingMoment.value = false
+    }
+}
+
+// 取消发布动态
+function cancelAddMoment() {
+    showAddMoment.value = false
+    newMomentContent.value = ''
+}
+
+// 获取动态列表
+async function getMomentList() {
+    try {
+        // 这里可以添加实际的API调用
+        const resp = await fetch('http://localhost/v1/api/moment/list', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        const data = await resp.json()
+        console.log(data)
+        if (data.code === 0) {
+            moments.value = data.data.map(item => ({
+                user_id: item.user_id,
+                author: item.username,
+                content: item.content,
+                timestamp: item.create_time
+                // timestamp: item.create_time,
+                // likes: item.likes || 0,
+                // comments: item.comments || 0
+            }))
+        }
+
+        // 暂时从localStorage获取
+       // const savedMoments = JSON.parse(localStorage.getItem(`moments_${sessionKey}`) || '[]')
+        //moments.value = savedMoments
+    } catch (e) {
+        console.error('获取动态列表失败:', e)
+    }
+}
+
+// 格式化时间
+function formatTime(timestamp) {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now - date
+    
+    if (diff < 60000) { // 1分钟内
+        return '刚刚'
+    } else if (diff < 3600000) { // 1小时内
+        return Math.floor(diff / 60000) + '分钟前'
+    } else if (diff < 86400000) { // 24小时内
+        return Math.floor(diff / 3600000) + '小时前'
+    } else if (diff < 604800000) { // 7天内
+        return Math.floor(diff / 86400000) + '天前'
+    } else {
+        return date.toLocaleDateString()
+    }
+}
+
+// todo 点赞动态
+function likeMoment(moment) {
+    if (!moment.likes) {
+        moment.likes = 0
+    }
+    moment.likes++
+    console.log('点赞动态:', moment)
+}
+
+// todo 评论动态
+function commentMoment(moment) {
+    if (!moment.comments) {
+        moment.comments = 0
+    }
+    moment.comments++
+    console.log('评论动态:', moment)
+    // 这里可以添加评论弹窗或跳转到评论页面的逻辑
+}
 </script>
 
 <style scoped>
@@ -719,6 +1014,7 @@ function resetPasswordForm() {
     transition: background 0.2s;
     border-radius: 6px;
     margin: 0 8px 8px 8px;
+    position: relative;
 }
 
 .nav-item:hover {
@@ -728,6 +1024,17 @@ function resetPasswordForm() {
 .nav-icon {
     font-size: 20px;
     margin-right: 6px;
+}
+
+.moment-notification-dot {
+    position: absolute;
+    top: 8px;
+    right: 20px;
+    width: 8px;
+    height: 8px;
+    background: #ff4444;
+    border-radius: 50%;
+    border: 2px solid #fff;
 }
 
 .activated-list {
@@ -827,6 +1134,41 @@ function resetPasswordForm() {
     background: #f7f7f7;
     border-radius: 6px;
     margin: 8px 8px 0 8px;
+}
+
+.add-friend-input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+}
+
+.add-friend-confirm {
+    background: #42b983;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+.add-friend-confirm:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.add-friend-cancel {
+    background: #eee;
+    color: #333;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .create-group-dialog {
@@ -1005,6 +1347,19 @@ function resetPasswordForm() {
     padding: 0 4px;
     position: relative;
     right: 16px;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-3px);
+    }
+    75% {
+        transform: translateX(3px);
+    }
 }
 
 .group-info {
@@ -1037,6 +1392,7 @@ function resetPasswordForm() {
     padding: 0 4px;
     position: relative;
     right: 16px;
+    animation: blink 1.5s infinite;
 }
 
 .friend-request-overlay {
@@ -1484,5 +1840,320 @@ function resetPasswordForm() {
     background: #e9ecef;
     border-color: #bbb;
     color: #333;
+}
+
+/* 此刻功能样式 */
+.moment-list-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+}
+
+.moment-list-title {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+}
+
+.add-moment-btn {
+    background: #42b983;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-moment-btn:hover {
+    background: #369870;
+    transform: translateY(-1px);
+}
+
+.add-moment-dialog {
+    padding: 16px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.add-moment-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.add-moment-textarea:focus {
+    outline: none;
+    border-color: #42b983;
+    box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
+}
+
+.moment-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.char-count {
+    font-size: 12px;
+    color: #888;
+}
+
+.publish-moment-btn {
+    background: #42b983;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 8px;
+}
+
+.publish-moment-btn:hover:not(:disabled) {
+    background: #369870;
+}
+
+.publish-moment-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.cancel-moment-btn {
+    background: #f8f9fa;
+    color: #666;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cancel-moment-btn:hover {
+    background: #e9ecef;
+    border-color: #bbb;
+}
+
+.moment-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.moment-item {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.moment-item:hover {
+    background: #f8f9fa;
+}
+
+.moment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.moment-avatar {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.moment-info {
+    flex: 1;
+}
+
+.moment-author {
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.moment-time {
+    font-size: 12px;
+    color: #888;
+}
+
+.moment-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.moment-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.moment-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.moment-action-btn:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.moment-action-btn svg {
+    stroke-width: 1.5;
+}
+
+.empty-moments {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-text {
+    font-size: 14px;
+    color: #999;
+}
+
+/* 主题设置样式 */
+.theme-section {
+    margin-bottom: 24px;
+}
+
+.theme-section h4 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.theme-options {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.theme-option {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.theme-option:hover {
+    border-color: #42b983;
+}
+
+.theme-option.active {
+    border-color: #42b983;
+    background: rgba(66, 185, 131, 0.1);
+}
+
+.theme-preview {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.preview-header {
+    height: 12px;
+    background: #f5f5f5;
+}
+
+.preview-content {
+    height: 28px;
+    background: #fff;
+}
+
+.light-preview .preview-header {
+    background: #f8f9fa;
+}
+
+.light-preview .preview-content {
+    background: #ffffff;
+}
+
+.dark-preview .preview-header {
+    background: #2d3748;
+}
+
+.dark-preview .preview-content {
+    background: #1a202c;
+}
+
+.eye-care-preview .preview-header {
+    background: #f7f3e9;
+}
+
+.eye-care-preview .preview-content {
+    background: #fefcf3;
+}
+
+.theme-option span {
+    font-size: 14px;
+    color: #666;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.form-group small {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+    margin-left: 24px;
+}
+
+.form-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #42b983;
 }
 </style>

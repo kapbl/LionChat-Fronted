@@ -1,0 +1,296 @@
+/* 全局主题样式 */
+
+/* CSS变量定义 */
+:root {
+  /* 浅色主题 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+  --border-color: #dee2e6;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --accent-color: #42b983;
+  --accent-hover: #369870;
+  --message-self: #d1f5d3;
+  --message-other: #e6e6e6;
+  --input-bg: #ffffff;
+  --input-border: #ced4da;
+}
+
+/* 深色主题 */
+.dark-theme {
+  --bg-primary: #1a202c;
+  --bg-secondary: #2d3748;
+  --bg-tertiary: #4a5568;
+  --text-primary: #f7fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #a0aec0;
+  --border-color: #4a5568;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --accent-color: #48bb78;
+  --accent-hover: #38a169;
+  --message-self: #2f855a;
+  --message-other: #4a5568;
+  --input-bg: #2d3748;
+  --input-border: #4a5568;
+}
+
+/* 护眼主题 */
+.eye-care-theme {
+  --bg-primary: #fefcf3;
+  --bg-secondary: #f7f3e9;
+  --bg-tertiary: #f0ead6;
+  --text-primary: #3c2e26;
+  --text-secondary: #5d4e37;
+  --text-muted: #8b7355;
+  --border-color: #d4c4a8;
+  --shadow: rgba(60, 46, 38, 0.1);
+  --accent-color: #8fbc8f;
+  --accent-hover: #7ba05b;
+  --message-self: #e6f3e6;
+  --message-other: #f0ead6;
+  --input-bg: #fefcf3;
+  --input-border: #d4c4a8;
+}
+
+/* 护眼模式增强 */
+.eye-care-enhanced {
+  filter: sepia(0.1) saturate(0.8) brightness(0.95);
+}
+
+/* 应用主题变量到组件 */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 聊天容器 */
+.chat-container {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* 左侧布局 */
+.left-list {
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+}
+
+.activated-list {
+  background-color: var(--bg-primary);
+}
+
+/* 消息气泡 */
+.msg-bubble {
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.message.self .msg-bubble {
+  background-color: var(--message-self) !important;
+  color: var(--text-primary);
+}
+
+.message.other .msg-bubble {
+  background-color: var(--message-other) !important;
+  color: var(--text-primary);
+}
+
+/* 输入框 */
+.msg-textarea {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary);
+}
+
+.msg-textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.2);
+}
+
+/* 按钮 */
+button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+}
+
+button:hover {
+  background-color: var(--accent-hover);
+}
+
+/* 导航项 */
+.nav-item {
+  color: var(--text-secondary);
+}
+
+.nav-item:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+/* 好友/群组列表项 */
+.friend-item,
+.group-item {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.friend-item:hover,
+.group-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.friend-item.active,
+.group-item.active {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+/* 设置对话框 */
+.settings-dialog {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.settings-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.tab-btn.active {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.tab-btn:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* 表单元素 */
+.form-input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+
+.form-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(66, 185, 131, 0.2);
+}
+
+/* 动态相关 */
+.moment-item {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.moment-content {
+  color: var(--text-primary);
+}
+
+.timestamp {
+  color: var(--text-muted);
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* 动画过渡 */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 深色模式下的特殊处理 */
+.dark-theme .emoji-panel {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.dark-theme .emoji-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* 护眼模式下的特殊处理 */
+.eye-care-theme img,
+.eye-care-theme video {
+  filter: sepia(0.1) brightness(0.9);
+}
+
+.eye-care-enhanced img,
+.eye-care-enhanced video {
+  filter: sepia(0.2) saturate(0.8) brightness(0.85);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .theme-options {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .theme-option {
+    padding: 16px;
+  }
+  
+  .theme-preview {
+    width: 80px;
+    height: 50px;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  :root {
+    --border-color: #000000;
+    --text-primary: #000000;
+    --bg-primary: #ffffff;
+  }
+  
+  .dark-theme {
+    --border-color: #ffffff;
+    --text-primary: #ffffff;
+    --bg-primary: #000000;
+  }
+}
+
+/* 减少动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

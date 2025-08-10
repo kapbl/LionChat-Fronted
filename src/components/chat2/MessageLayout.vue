@@ -7,10 +7,16 @@
                 <button @click="startVoiceCall" class="voice-call-btn" title="语音通话">
                     📞
                 </button>
+                <button @click="startVideoCall" class="video-call-btn" title="视频通话">
+                    📹
+                </button>
             </div>
         </div>
-        <div class="messages">
-            <div v-for="(msg, idx) in messages" :key="idx" :class="['message', msg.from === myUuid ? 'self' : 'other']">
+        <div class="messages" ref="messagesContainer">
+            <div v-for="(msg, idx) in messages" 
+                 :key="msg.messageId || idx" 
+                 :class="['message', msg.from === myUuid ? 'self' : 'other']"
+                 :ref="el => registerMessageElement(msg, el)">
                 <div class="msg-bubble">
                     <span class="sender">{{ msg.fromUsername }}：</span>
                     <span v-if="msg.contentType === 2" class="content">
@@ -29,7 +35,26 @@
                     </span>
                     <span v-else class="content">{{ msg.content }}</span>
 
-                    <span class="timestamp">{{ formatTime(msg.timestamp) }}</span>
+                    <div class="message-footer">
+                        <span class="timestamp">{{ formatTime(msg.timestamp) }}</span>
+                        <!-- 显示消息已读状态 -->
+                        <span v-if="msg.from === myUuid && msg.messageId" class="read-status">
+                            <span v-if="isMessageRead(msg.messageId)" class="read-indicator">✓✓</span>
+                            <span v-else class="unread-indicator">✓</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 打字指示器 -->
+            <div v-if="showTypingIndicator" class="message other">
+                <div class="typing-indicator">
+                    <span class="sender">{{ typingUser }}正在输入</span>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -52,7 +77,7 @@
                     }}</span>
             </div>
             <div class="input-area">
-                <textarea v-model="input" @keyup.enter="sendMessage" placeholder="输入消息..." rows="1"
+                <textarea v-model="input" @keyup.enter="sendMessage" @input="handleInputChange" placeholder="输入消息..." rows="1"
                     class="msg-textarea" />
                 <button @click="sendMessage">发送</button>
             </div>
@@ -82,25 +107,37 @@
             :my-uuid="myUuid"
             :my-name="myName"
             :message-type="MessageType"
-            @call-started="onCallStarted"
-            @call-ended="onCallEnded"
+            @call-started="onVoiceCallStarted"
+            @call-ended="onVoiceCallEnded"
+        />
+        
+        <!-- WebRTC视频通话组件 -->
+        <WebRTCVideoCall
+            v-if="MessageType"
+            ref="videoCallRef"
+            :my-uuid="myUuid"
+            :my-name="myName"
+            :message-type="MessageType"
+            @call-started="onVideoCallStarted"
+            @call-ended="onVideoCallEnded"
         />
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import protobuf from 'protobufjs'
 import { useRoute } from 'vue-router'
 import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { toUuid,currentChatTargetName,currentChatID } from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups } from './state.js'
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
+import WebRTCVideoCall from './WebRTCVideoCall.vue'
+import { ackManager } from './ackManager.js'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
-const chatMessages = ref({}) // { [uuid]: [msg, ...] }
 const messages = computed(() => chatMessages.value[toUuid.value] || [])
 const input = ref('')
 const userinfo = JSON.parse(localStorage.getItem(`userinfo_${sessionKey}`) || '{}')
@@ -111,20 +148,7 @@ let ws = null
 const wsConnected = ref(false)
 // 当前消息类型，1=单聊，2=群聊
 const messageType = ref(1)
-// 加好友请求消息框
-const showFriendRequest = ref(false)
-const friendRequestInfo = ref({
-    fromUsername: '',
-    content: '',
-    from: ''
-})
-// 加好友请求回复消息框
-const showFriendReplyRequest = ref(false)
-const friendResponseInfo = ref({
-    fromUsername: '',
-    content: '',
-    from: ''
-})
+// 好友请求相关变量已移动到 state.js 中
 const currentChatName = computed(() => {
     return currentChatTargetName.value
 })
@@ -145,6 +169,16 @@ const previewImageUrl = ref('')
 const previewVideoUrl = ref('')
 // WebRTC语音通话
 const voiceCallRef = ref(null)
+// WebRTC视频通话
+const videoCallRef = ref(null)
+// ACK相关
+const messagesContainer = ref(null)
+const readMessageIds = ref(new Set()) // 已读消息ID集合
+
+// 打字指示器相关
+const showTypingIndicator = ref(false)
+const typingUser = ref('')
+const typingTimer = ref(null)
 async function handleFileSelect(event) {
     const file = event.target.files[0]
     if (!file) return
@@ -190,6 +224,15 @@ function sendFileMessage(fileData) {
         url: URL.createObjectURL(new Blob([fileData.fileBuffer])),
         fileSuffix : fileData.suffix,
         file: fileData.fileBuffer,
+        messageId: generateMessageId(), // 生成唯一消息ID
+        isFragmented: false,
+        fragmentIndex: 0,
+        totalFragments: 0,
+        timestamp: Date.now(),
+        checksum: '',
+        ackMessageIds: [],
+        isRead: false,
+        readTimestamp: 0
     }
     const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
@@ -243,7 +286,16 @@ function sendVoiceMessage(voiceData) {
         type: 'audio',
         messageType: messageType.value,
         url: URL.createObjectURL(audioBlob.value),
-        file: voiceData.audioBuffer
+        file: voiceData.audioBuffer,
+        messageId: generateMessageId(), // 生成唯一消息ID
+        isFragmented: false,
+        fragmentIndex: 0,
+        totalFragments: 0,
+        timestamp: Date.now(),
+        checksum: '',
+        ackMessageIds: [],
+        isRead: false,
+        readTimestamp: 0
     }
 
     const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
@@ -292,6 +344,12 @@ onMounted(async () => {
         ws.addEventListener('open', () => (wsConnected.value = true))
         ws.addEventListener('close', () => (wsConnected.value = false))
     }
+    
+    // 初始化ACK管理器
+    ackManager.init(myUuid, MessageType.value)
+    
+    // 监听消息已读确认事件
+    window.addEventListener('messagesAcked', handleMessagesAcked)
 })
 // 添加分片管理器
 const fragmentManager = new Map(); // 存储待重组的分片
@@ -317,7 +375,6 @@ function handleWebSocketMessage(event) {
     const { from, to, file } = decoded;
     const isPrivateMessage = to === myUuid;
     const chatId = isPrivateMessage ? from : to;
-    console.log(decoded)
     try {
         switch (decoded.contentType) {
             case 1: // 文本消息
@@ -338,11 +395,17 @@ function handleWebSocketMessage(event) {
             case 6: // WebRTC信令消息
                 handleWebRTCSignaling(decoded);
                 break;
+            case 7: // WebRTC视频信令消息
+                handleWebRTCVideoSignaling(decoded);
+                break;
             case 8: // 好友请求
                 handleFriendRequest(decoded);
                 break;
             case 9: // 好友回复
                 handleFriendResponse(decoded);
+                break;
+            case 10: // ACK确认消息
+                handleAckMessage(decoded);
                 break;
             default:
                 console.log("未知消息类型")
@@ -470,6 +533,7 @@ function handleAudioMessage(decoded, chatId, isPrivateMessage) {
     addMessageToChat(chatId, decoded);
 }
 
+// 处理加好友请求
 function handleFriendRequest(decoded) {
     friendRequestInfo.value = {
         fromUsername: decoded.fromUsername,
@@ -478,7 +542,7 @@ function handleFriendRequest(decoded) {
     };
     showFriendRequest.value = true;
 }
-
+//处理回复加好友请求
 function handleFriendResponse(decoded) {
     friendResponseInfo.value = {
         fromUsername: decoded.fromUsername,
@@ -495,6 +559,13 @@ function handleWebRTCSignaling(decoded) {
     }
 }
 
+// WebRTC视频信令消息处理
+function handleWebRTCVideoSignaling(decoded) {
+    if (videoCallRef.value) {
+        videoCallRef.value.handleSignalingMessage(decoded);
+    }
+}
+
 // 发起语音通话
 function startVoiceCall() {
     if (!toUuid.value || !currentChatName.value) {
@@ -507,24 +578,45 @@ function startVoiceCall() {
     }
 }
 
-// 通话开始事件
-function onCallStarted() {
+// 发起视频通话
+function startVideoCall() {
+    if (!toUuid.value || !currentChatName.value) {
+        alert('请先选择聊天对象');
+        return;
+    }
+    
+    if (videoCallRef.value) {
+        videoCallRef.value.startCall(toUuid.value, currentChatName.value);
+    }
+}
+
+// 语音通话开始事件
+function onVoiceCallStarted() {
     console.log('语音通话已开始');
 }
 
-// 通话结束事件
-function onCallEnded() {
+// 语音通话结束事件
+function onVoiceCallEnded() {
     console.log('语音通话已结束');
+}
+
+// 视频通话开始事件
+function onVideoCallStarted() {
+    console.log('视频通话已开始');
+}
+
+// 视频通话结束事件
+function onVideoCallEnded() {
+    console.log('视频通话已结束');
 }
 
 // 辅助函数
 function updateUnreadCount(chatId, isPrivateMessage) {
-    console.log(chatId)
-    console.log(currentChatID.value)
     if (currentChatID.value !== chatId) {
         const targetCollection = isPrivateMessage ? friends.value : groups.value;
         const targetUpdate = targetCollection.find(item => item.uuid === chatId);
         if (targetUpdate) {
+            console.log("更新未读消息数量")
             targetUpdate.unread++;
         }
     }
@@ -533,9 +625,15 @@ function updateUnreadCount(chatId, isPrivateMessage) {
 function addMessageToChat(chatId, decoded) {
     chatMessages.value[chatId] ??= [];
     console.log("audio: ", decoded)
+    
+    // 为消息生成唯一ID（如果没有的话）
+    if (!decoded.messageId) {
+        decoded.messageId = generateMessageId()
+    }
+    
     chatMessages.value[chatId].push({
         ...decoded,
-        timestamp: Date.now()
+        timestamp: decoded.timestamp || Date.now()
     });
 }
 
@@ -588,13 +686,57 @@ setInterval(() => {
 
 onBeforeUnmount(() => {
     closeWebSocket()
+    // 清理ACK管理器
+    ackManager.destroy()
+    // 移除事件监听
+    window.removeEventListener('messagesAcked', handleMessagesAcked)
 })
 function formatTime(ts) {
     const date = new Date(ts)
     return date.toLocaleTimeString()
 }
 // 发送消息
+// 处理输入变化，显示打字指示器
+function handleInputChange() {
+    if (!input.value.trim()) {
+        hideTypingIndicator()
+        return
+    }
+    
+    // 模拟显示打字指示器（在实际应用中，这里应该通过WebSocket发送打字状态给其他用户）
+    showTypingIndicatorDemo()
+}
+
+// 显示打字指示器演示
+function showTypingIndicatorDemo() {
+    // 清除之前的定时器
+    if (typingTimer.value) {
+        clearTimeout(typingTimer.value)
+    }
+    
+    // 显示打字指示器
+    showTypingIndicator.value = true
+    typingUser.value = '对方'
+    
+    // 3秒后自动隐藏
+    typingTimer.value = setTimeout(() => {
+        hideTypingIndicator()
+    }, 3000)
+}
+
+// 隐藏打字指示器
+function hideTypingIndicator() {
+    showTypingIndicator.value = false
+    typingUser.value = ''
+    if (typingTimer.value) {
+        clearTimeout(typingTimer.value)
+        typingTimer.value = null
+    }
+}
+
 function sendMessage() {
+    // 发送消息时隐藏打字指示器
+    hideTypingIndicator()
     if (!input.value.trim() || !MessageType.value || !wsConnected.value) return
     if (!toUuid.value.trim()) {
         alert('请先选择聊天对象')
@@ -613,6 +755,15 @@ function sendMessage() {
         url: '',
         fileSuffix: '',
         file: new Uint8Array(),
+        messageId: generateMessageId(), // 生成唯一消息ID
+        isFragmented: false,
+        fragmentIndex: 0,
+        totalFragments: 0,
+        timestamp: Date.now(),
+        checksum: '',
+        ackMessageIds: [],
+        isRead: false,
+        readTimestamp: 0
     }
     const errMsg = MessageType.value.verify(msgObj)
     if (errMsg) {
@@ -675,6 +826,65 @@ function closeVideoPreview() {
     showVideoPreview.value = false
     previewVideoUrl.value = ''
 }
+
+// ACK相关方法
+// 生成消息唯一ID
+function generateMessageId() {
+    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
+// 注册消息元素到ACK管理器
+function registerMessageElement(msg, el) {
+    if (el && msg.messageId && msg.from !== myUuid) {
+        nextTick(() => {
+            ackManager.registerMessageElement(msg.messageId, el, msg.from)
+        })
+    }
+}
+
+// 检查消息是否已读
+function isMessageRead(messageId) {
+    return readMessageIds.value.has(messageId)
+}
+
+// 处理ACK确认消息
+function handleAckMessage(decoded) {
+    ackManager.handleAckMessage(decoded)
+}
+
+// 处理消息已读确认事件
+function handleMessagesAcked(event) {
+    const { messageIds } = event.detail
+    messageIds.forEach(messageId => {
+        readMessageIds.value.add(messageId)
+    })
+}
+
+// 监听聊天对象变化，标记当前聊天为已读
+watch(toUuid, (newUuid, oldUuid) => {
+    if (newUuid && newUuid !== oldUuid) {
+        // 切换聊天时，标记当前聊天的所有消息为已读
+        nextTick(() => {
+            const currentMessages = messages.value
+            if (currentMessages.length > 0) {
+                ackManager.markChatAsRead(newUuid, currentMessages)
+            }
+        })
+    }
+})
+
+// 监听页面可见性变化
+watch(() => document.hidden, (hidden) => {
+    if (!hidden && toUuid.value) {
+        // 页面变为可见时，标记当前聊天为已读
+        nextTick(() => {
+            const currentMessages = messages.value
+            if (currentMessages.length > 0) {
+                ackManager.markChatAsRead(toUuid.value, currentMessages)
+            }
+        })
+    }
+})
 </script>
 
 <style scoped>
@@ -762,6 +972,31 @@ function closeVideoPreview() {
     transform: scale(0.95);
 }
 
+.video-call-btn {
+    background: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+}
+
+.video-call-btn:hover {
+    background: #3367d6;
+    transform: scale(1.1);
+}
+
+.video-call-btn:active {
+    transform: scale(0.95);
+}
+
 .messages {
     flex: 1;
     overflow-y: auto;
@@ -790,6 +1025,88 @@ function closeVideoPreview() {
     word-break: break-all;
     display: inline-block;
     position: relative;
+    animation: bubbleAppear 0.3s ease-out;
+    transition: all 0.2s ease;
+}
+
+.msg-bubble:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes bubbleAppear {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes bubbleAppearRight {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateX(20px) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateX(0) translateY(0);
+    }
+}
+
+@keyframes bubbleAppearLeft {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateX(-20px) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateX(0) translateY(0);
+    }
+}
+
+/* 打字动画效果 */
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #e6e6e6;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    margin-bottom: 12px;
+    animation: bubbleAppearLeft 0.3s ease-out;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 3px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #888;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
 }
 
 .message.self .msg-bubble {
@@ -798,6 +1115,7 @@ function closeVideoPreview() {
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 16px;
     align-items: flex-end;
+    animation: bubbleAppearRight 0.3s ease-out;
 }
 
 .message.other .msg-bubble {
@@ -806,6 +1124,7 @@ function closeVideoPreview() {
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 16px;
     align-items: flex-start;
+    animation: bubbleAppearLeft 0.3s ease-out;
 }
 
 .sender {
@@ -813,10 +1132,31 @@ function closeVideoPreview() {
     margin-right: 6px;
 }
 
+.message-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
 .timestamp {
     color: #888;
     font-size: 12px;
+}
+
+.read-status {
     margin-left: 8px;
+    font-size: 12px;
+}
+
+.read-indicator {
+    color: #42b983;
+    font-weight: bold;
+}
+
+.unread-indicator {
+    color: #888;
+    font-weight: bold;
 }
 
 .input-area-wrap {
