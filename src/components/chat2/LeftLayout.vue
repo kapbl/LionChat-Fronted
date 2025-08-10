@@ -888,22 +888,16 @@ async function getMomentList() {
             }
         })
         const data = await resp.json()
-        console.log(data)
         if (data.code === 0) {
             moments.value = data.data.map(item => ({
+                moment_id: item.moment_id,
                 user_id: item.user_id,
                 author: item.username,
                 content: item.content,
-                timestamp: item.create_time
-                // timestamp: item.create_time,
-                // likes: item.likes || 0,
-                // comments: item.comments || 0
+                likes: item.like_count,
+                timestamp: item.create_time,
             }))
         }
-
-        // 暂时从localStorage获取
-       // const savedMoments = JSON.parse(localStorage.getItem(`moments_${sessionKey}`) || '[]')
-        //moments.value = savedMoments
     } catch (e) {
         console.error('获取动态列表失败:', e)
     }
@@ -929,7 +923,37 @@ function formatTime(timestamp) {
 }
 
 // todo 点赞动态
-function likeMoment(moment) {
+async function likeMoment(moment) {
+    console.log('点赞动态2:', moment['moment_id'])
+    console.log('moment_id类型:', typeof moment['moment_id'])
+    const momentId = parseInt(moment['moment_id'])
+    console.log('parseInt后的值:', momentId)
+    console.log('parseInt后的类型:', typeof momentId)
+
+    try {
+        // 这里可以添加实际的API调用
+        const requestBody = {
+            moment_id: momentId
+        }
+        console.log('发送到后端的数据:', JSON.stringify(requestBody))
+        
+        const resp = await fetch('/v1/api/comment/like', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestBody)
+        })
+        // const data = await resp.json()
+        // if (data.code === 0) {
+        //     alert('点赞成功')
+        // } else {
+        //     throw new Error(data.msg || '点赞失败')
+        // }
+    } catch (e) {
+        alert('点赞失败: ' + e.message)
+    }
     if (!moment.likes) {
         moment.likes = 0
     }
