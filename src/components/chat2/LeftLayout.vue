@@ -86,10 +86,41 @@
                 </div>
             </div>
             <div v-if="showCreateGroup" class="create-group-dialog">
-                <input v-model="createGroupName" placeholder="输入新群组名称" class="create-group-input"
-                    @keyup.enter="createGroup" />
-                <button class="create-group-confirm" @click="createGroup" :disabled="creatingGroup">创建</button>
-                <button class="create-group-cancel" @click="cancelCreateGroup">取消</button>
+                <div class="create-group-form">
+                    <div class="form-group">
+                        <label>群组名称：</label>
+                        <input v-model="createGroupName" placeholder="输入新群组名称" class="create-group-input" />
+                    </div>
+                    <div class="form-group">
+                        <label>群组类型：</label>
+                        <select v-model="createGroupType" class="create-group-select">
+                            <option value="">请选择群组类型</option>
+                            <option value="游戏">游戏</option>
+                            <option value="体育">体育</option>
+                            <option value="新闻">新闻</option>
+                            <option value="学习">学习</option>
+                            <option value="工作">工作</option>
+                            <option value="娱乐">娱乐</option>
+                            <option value="生活">生活</option>
+                            <option value="技术">技术</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>群组描述：</label>
+                        <textarea 
+                            v-model="createGroupDescription" 
+                            placeholder="请输入群组描述（最多200字）" 
+                            class="create-group-textarea"
+                            maxlength="200"
+                        ></textarea>
+                        <div class="char-count">{{ createGroupDescription.length }}/200</div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="create-group-confirm" @click="createGroup" :disabled="creatingGroup || !createGroupName.trim() || !createGroupType">创建</button>
+                        <button class="create-group-cancel" @click="cancelCreateGroup">取消</button>
+                    </div>
+                </div>
             </div>
             <div v-if="showAddGroup" class="add-group-dialog">
                 <input v-model="newGroupName" placeholder="输入要加入的群聊名称" class="add-group-input"
@@ -152,12 +183,60 @@
                             </svg>
                             <span>{{ moment.likes || 0 }}</span>
                         </button>
-                        <button class="moment-action-btn" @click="commentMoment(moment)">
+                        <button class="moment-action-btn" @click="toggleComments(moment)">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
-                            <span>{{ moment.comments || 0 }}</span>
+                            <span>{{ moment.comments?.length || 0 }}</span>
                         </button>
+                    </div>
+                    <!-- 评论区域 -->
+                    <div v-if="moment.showComments" class="moment-comments">
+                        <div class="comment-input-area">
+                            <textarea 
+                                v-model="moment.newComment" 
+                                placeholder="写下你的评论..." 
+                                class="comment-input"
+                                @keyup.ctrl.enter="submitComment(moment)"
+                                maxlength="500"
+                            ></textarea>
+                            <div class="comment-actions">
+                                <span class="comment-char-count">{{ (moment.newComment || '').length }}/500</span>
+                                <button 
+                                    class="submit-comment-btn" 
+                                    @click="submitComment(moment)" 
+                                    :disabled="!moment.newComment?.trim() || submittingComment"
+                                >
+                                    发布评论
+                                </button>
+                            </div>
+                        </div>
+                        <div class="comments-list">
+                            <div v-for="comment in moment.comments" :key="comment.id" class="comment-item">
+                                <div class="comment-header">
+                                    <div class="comment-avatar">
+                                        <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="" width="24" height="24">
+                                            <mask id="comment-avatar" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+                                                <rect width="36" height="36" rx="72" fill="#FFFFFF"></rect>
+                                            </mask>
+                                            <g mask="url(#comment-avatar)">
+                                                <rect width="36" height="36" fill="#49007e"></rect>
+                                                <rect x="0" y="0" width="36" height="36" transform="translate(7 1) rotate(53 18 18) scale(1.2)"
+                                                    fill="#ff7d10" rx="6"></rect>
+                                            </g>
+                                        </svg>
+                                    </div>
+                                    <div class="comment-info">
+                                        <div class="comment-author">{{ comment.author }}</div>
+                                        <div class="comment-time">{{ formatTime(comment.timestamp) }}</div>
+                                    </div>
+                                </div>
+                                <div class="comment-content">{{ comment.content }}</div>
+                            </div>
+                            <div v-if="!moment.comments || moment.comments.length === 0" class="empty-comments">
+                                <div class="empty-comment-text">还没有评论，快来抢沙发吧！</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div v-if="moments.length === 0" class="empty-moments">
@@ -307,7 +386,8 @@
 <script setup>
 import { ref, onMounted} from 'vue'
 import { useRoute } from 'vue-router'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments } from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType } from './state.js'
+
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
@@ -325,6 +405,8 @@ const showAddGroup = ref(false)
 const newGroupName = ref('')
 const showCreateGroup = ref(false)
 const createGroupName = ref('')
+const createGroupType = ref('')
+const createGroupDescription = ref('')
 const creatingGroup = ref(false)
 const joiningGroup = ref(false)
 // 好友列表和群聊列表现在从 state.js 导入
@@ -358,6 +440,7 @@ const showAddMoment = ref(false)
 const newMomentContent = ref('')
 const publishingMoment = ref(false)
 const moments = ref([])
+const submittingComment = ref(false)
 // const currentChatID = ref(0)
 onMounted(async () => {
     getFriendList()
@@ -388,7 +471,7 @@ async function searchFriend() {
     searchError.value = ''
     searchResults.value = []
     try {
-        const resp = await fetch(`http://localhost/v1/api/friend/search?username=${encodeURIComponent(name)}`, {
+        const resp = await fetch(`v1/api/friend/search?username=${encodeURIComponent(name)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -411,7 +494,7 @@ async function searchFriend() {
 function addSearchedFriend(f) {
     const sendAddRequest = async () => {
         try {
-            const resp = await fetch('http://localhost/v1/api/friend/addFriend', {
+            const resp = await fetch('v1/api/friend/addFriend', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -454,14 +537,22 @@ function cancelAddFriend() {
 // 创建群组
 async function createGroup() {
     const name = createGroupName.value.trim()
+    const type = createGroupType.value.trim()
+    const description = createGroupDescription.value.trim()
+    
     if (!name) {
         alert('请输入群组名称')
+        return
+    }
+    
+    if (!type) {
+        alert('请选择群组类型')
         return
     }
 
     creatingGroup.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/group/createGroup', {
+        const resp = await fetch('v1/api/group/createGroup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -469,17 +560,23 @@ async function createGroup() {
             },
             body: JSON.stringify({
                 group_name: name,
-                // description: ''
+                group_type: type,
+                description: description
             })
         })
 
         if (!resp.ok) throw new Error('网络错误')
         const data = await resp.json()
         if (data.code !== 0) throw new Error(data.msg || '创建失败')
+        console.log(data)
 
+        //uuid: item.group_uuid,
+        //name: item.group_name,
         groups.value.push({
             uuid: data.data.group_id,
             name: data.data.group_name,
+            type: type,
+            description: description,
             unread: 0
         })
 
@@ -501,7 +598,7 @@ async function joinGroup() {
 
     joiningGroup.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/group/joinGroup', {
+        const resp = await fetch('v1/api/group/joinGroup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -515,9 +612,9 @@ async function joinGroup() {
         if (!resp.ok) throw new Error('网络错误')
         const data = await resp.json()
         if (data.code !== 0) throw new Error(data.msg || '加入失败')
-
+        console.log(data)
         groups.value.push({
-            uuid: data.data.group_id,
+            uuid: data.data.group_uuid,
             name: data.data.group_name,
             unread: 0
         })
@@ -534,6 +631,8 @@ async function joinGroup() {
 function cancelCreateGroup() {
     showCreateGroup.value = false
     createGroupName.value = ''
+    createGroupType.value = ''
+    createGroupDescription.value = ''
 }
 // 取消加入群组
 function cancelAddGroup() {
@@ -543,20 +642,21 @@ function cancelAddGroup() {
 // 选择一个朋友
 function selectFriend(friend) {
     toUuid.value = friend.uuid
-    messageType.value = 1
+    currentChatType.value = 1
     currentChatID.value = friend.uuid
     friend.unread = 0
     currentChatTargetName.value = friend.name
-    console.log(friend)
     // 保存未读消息计数到localStorage
     saveUnreadCounts()
 }
 // 选择一个群组
 function selectGroup(group) {
+    console.log(group)
     toUuid.value = group.uuid
-    messageType.value = 2
+    currentChatType.value = 2
     currentChatID.value = group.uuid
     group.unread = 0
+    currentChatTargetName.value = group.name
     // 保存未读消息计数到localStorage
     saveUnreadCounts()
 }
@@ -580,7 +680,7 @@ function saveUnreadCounts() {
 // 添加处理好友请求的方法
 async function handleFriendRequest(isAccept) {
     try {
-        const resp = await fetch('http://localhost/v1/api/friend/handleRequest', {  // Changed endpoint
+        const resp = await fetch('v1/api/friend/handleRequest', {  // Changed endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -600,7 +700,7 @@ async function handleFriendRequest(isAccept) {
 // 添加处理好友回复请求的方法
 async function handleFriendResponse() {
     try {
-        const resp = await fetch('http://localhost/v1/api/friend/handleResponse', {  // Changed endpoint
+        const resp = await fetch('v1/api/friend/handleResponse', {  // Changed endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -622,7 +722,7 @@ async function handleFriendResponse() {
 // 获取好友列表
 async function getFriendList() {
     try {
-        const resp = await fetch('http://localhost/v1/api/friend/getFriendList', {
+        const resp = await fetch('v1/api/friend/getFriendList', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -644,7 +744,7 @@ async function getFriendList() {
 // 获取群组列表
 async function getGroupList() {
     try {
-        const resp = await fetch('http://localhost/v1/api/group/getGroupList', {
+        const resp = await fetch('v1/api/group/getGroupList', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -673,7 +773,7 @@ async function updateProfile() {
 
     updatingProfile.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/profile/updateProfile', {
+        const resp = await fetch('v1/api/profile/updateProfile', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -724,7 +824,7 @@ async function updatePassword() {
 
     updatingPassword.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/user/updatePassword', {
+        const resp = await fetch('v1/api/user/updatePassword', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -830,7 +930,7 @@ async function publishMoment() {
     publishingMoment.value = true
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch('http://localhost/v1/api/moment/createMoment', {
+        const resp = await fetch('v1/api/moment/createMoment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -881,7 +981,7 @@ function cancelAddMoment() {
 async function getMomentList() {
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch('http://localhost/v1/api/moment/list', {
+        const resp = await fetch('v1/api/moment/list', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -895,6 +995,7 @@ async function getMomentList() {
                 author: item.username,
                 content: item.content,
                 likes: item.like_count,
+                comments: item.comment_list,
                 timestamp: item.create_time,
             }))
         }
@@ -945,30 +1046,118 @@ async function likeMoment(moment) {
             },
             body: JSON.stringify(requestBody)
         })
-        // const data = await resp.json()
-        // if (data.code === 0) {
-        //     alert('点赞成功')
-        // } else {
-        //     throw new Error(data.msg || '点赞失败')
-        // }
+        const data = await resp.json()
+        if (data.code === 0) {
+            alert('点赞成功')
+             if (!moment.likes) {
+                moment.likes = 0
+            }
+            moment.likes++
+            console.log('点赞动态:', moment)
+        } else {
+            throw new Error(data.msg || '你已经点赞过了')
+
+        }
     } catch (e) {
         alert('点赞失败: ' + e.message)
     }
-    if (!moment.likes) {
-        moment.likes = 0
-    }
-    moment.likes++
-    console.log('点赞动态:', moment)
+   
 }
 
-// todo 评论动态
-function commentMoment(moment) {
-    if (!moment.comments) {
-        moment.comments = 0
+// 切换评论显示状态
+function toggleComments(moment) {
+    moment.showComments = !moment.showComments
+    
+    // 如果是第一次打开评论区，初始化评论数据
+    if (moment.showComments && !moment.comments) {
+        moment.comments = []
+        moment.newComment = ''
+        // 获取该动态的评论列表
+        getCommentList(moment)
     }
-    moment.comments++
-    console.log('评论动态:', moment)
-    // 这里可以添加评论弹窗或跳转到评论页面的逻辑
+}
+
+// 提交评论
+async function submitComment(moment) {
+    const content = moment.newComment?.trim()
+    if (!content) {
+        alert('请输入评论内容')
+        return
+    }
+
+    submittingComment.value = true
+    try {
+        const momentId = parseInt(moment['moment_id'] || moment.id)
+        
+        // 调用后端API提交评论
+        const resp = await fetch('/v1/api/comment/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                moment_id: momentId,
+                content: content
+            })
+        })
+        
+        const data = await resp.json()
+        if (data.code === 0) {
+            // 创建新评论对象
+            const newComment = {
+                id: Date.now(),
+                author: myName,
+                content: content,
+                timestamp: new Date().toISOString()
+            }
+            
+            // 添加到评论列表
+            if (!moment.comments) {
+                moment.comments = []
+            }
+            moment.comments.unshift(newComment)
+            
+            // 清空输入框
+            moment.newComment = ''
+            
+            alert('评论发布成功')
+        } else {
+            throw new Error(data.msg || '评论发布失败')
+        }
+    } catch (e) {
+        alert('评论发布失败: ' + e.message)
+    } finally {
+        submittingComment.value = false
+    }
+}
+
+// 获取评论列表
+async function getCommentList(moment) {
+    try {
+        const momentId = parseInt(moment['moment_id'] || moment.id)
+        
+        const resp = await fetch(`/v1/api/comment/list?moment_id=${momentId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        
+        const data = await resp.json()
+        if (data.code === 0) {
+            moment.comments = data.data.map(item => ({
+                id: item.comment_id,
+                author: item.username,
+                content: item.content,
+                timestamp: item.create_time
+            }))
+        }
+    } catch (e) {
+        console.error('获取评论列表失败:', e)
+        // 如果获取失败，初始化为空数组
+        moment.comments = []
+    }
 }
 </script>
 
@@ -1196,21 +1385,71 @@ function commentMoment(moment) {
 }
 
 .create-group-dialog {
-    display: flex;
-    align-items: center;
-    padding: 8px 8px 8px 16px;
     background: #f7f7f7;
-    border-radius: 6px;
-    margin: 8px 8px 0 8px;
+    border-radius: 8px;
+    margin: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-.create-group-input {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #ccc;
+.create-group-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.create-group-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.create-group-form .form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+.create-group-input,
+.create-group-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
-    margin-right: 8px;
+    background: #fff;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.create-group-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    color: #333;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.create-group-form .char-count {
+    font-size: 12px;
+    color: #666;
+    text-align: right;
+    margin-top: 2px;
+}
+
+.create-group-form .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 10px;
 }
 
 .create-group-confirm {
@@ -1218,10 +1457,14 @@ function commentMoment(moment) {
     color: #fff;
     border: none;
     border-radius: 4px;
-    padding: 4px 10px;
+    padding: 8px 16px;
     font-size: 14px;
     cursor: pointer;
-    margin-right: 4px;
+    transition: background-color 0.2s;
+}
+
+.create-group-confirm:hover:not(:disabled) {
+    background: #369970;
 }
 
 .create-group-confirm:disabled {
@@ -1232,11 +1475,16 @@ function commentMoment(moment) {
 .create-group-cancel {
     background: #eee;
     color: #333;
-    border: none;
+    border: 1px solid #ddd;
     border-radius: 4px;
-    padding: 4px 10px;
+    padding: 8px 16px;
     font-size: 14px;
     cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.create-group-cancel:hover {
+    background: #e0e0e0;
 }
 
 .add-group-dialog {
@@ -2179,5 +2427,169 @@ function commentMoment(moment) {
     width: 16px;
     height: 16px;
     accent-color: #42b983;
+}
+
+/* 评论相关样式 */
+.moment-comments {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.comment-input-area {
+    margin-bottom: 16px;
+}
+
+.comment-input {
+    width: 100%;
+    min-height: 60px;
+    padding: 12px;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.comment-input:focus {
+    outline: none;
+    border-color: #42b983;
+    box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
+}
+
+.comment-input::placeholder {
+    color: #999;
+}
+
+.comment-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.comment-char-count {
+    font-size: 12px;
+    color: #888;
+}
+
+.submit-comment-btn {
+    background: #42b983;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submit-comment-btn:hover:not(:disabled) {
+    background: #369870;
+    transform: translateY(-1px);
+}
+
+.submit-comment-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.comments-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.comment-item {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+}
+
+.comment-item:hover {
+    border-color: #e1e5e9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.comment-item:last-child {
+    margin-bottom: 0;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.comment-avatar {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.comment-info {
+    flex: 1;
+}
+
+.comment-author {
+    font-weight: 600;
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.comment-time {
+    font-size: 11px;
+    color: #888;
+}
+
+.comment-content {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #333;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.empty-comments {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+
+.empty-comment-text {
+    font-size: 13px;
+    color: #999;
+}
+
+/* 评论区滚动条样式 */
+.comments-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.comments-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.comments-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+.comments-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 </style>

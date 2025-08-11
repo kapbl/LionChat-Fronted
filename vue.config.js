@@ -9,11 +9,6 @@ module.exports = defineConfig({
         changeOrigin: true,
         secure: false
       },
-      '/ws': {
-        target: 'ws://localhost',
-        changeOrigin: true,
-        secure: false
-      }
     }
   }
 })

@@ -131,7 +131,8 @@ import { useRoute } from 'vue-router'
 import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups } from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType } from './state.js'
+
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
 import { ackManager } from './ackManager.js'
@@ -146,8 +147,6 @@ const myUuid = userinfo.uuid
 const MessageType = ref(null)
 let ws = null
 const wsConnected = ref(false)
-// 当前消息类型，1=单聊，2=群聊
-const messageType = ref(1)
 // 好友请求相关变量已移动到 state.js 中
 const currentChatName = computed(() => {
     return currentChatTargetName.value
@@ -220,7 +219,8 @@ function sendFileMessage(fileData) {
         content: fileData.fileName,
         contentType: contentType,
         type: type,
-        messageType: messageType.value,
+        messageType: currentChatType.value,
+
         url: URL.createObjectURL(new Blob([fileData.fileBuffer])),
         fileSuffix : fileData.suffix,
         file: fileData.fileBuffer,
@@ -284,7 +284,7 @@ function sendVoiceMessage(voiceData) {
         content: '语音消息',
         contentType: 4,
         type: 'audio',
-        messageType: messageType.value,
+        messageType: currentChatType.value,
         url: URL.createObjectURL(audioBlob.value),
         file: voiceData.audioBuffer,
         messageId: generateMessageId(), // 生成唯一消息ID
@@ -751,7 +751,7 @@ function sendMessage() {
         content: input.value,
         contentType: 1, // 文字
         type: '',
-        messageType: messageType.value, // 单聊或群聊
+        messageType: currentChatType.value, // 单聊或群聊
         url: '',
         fileSuffix: '',
         file: new Uint8Array(),

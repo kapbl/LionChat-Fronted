@@ -28,3 +28,5 @@ export const friendResponseInfo = ref({
     content: '',
     from: ''
 })
+// 1 好友 2 群组
+export const currentChatType = ref(1)
