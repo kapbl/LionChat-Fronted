@@ -381,12 +381,21 @@
             </div>
         </div>
     </div>
+    
+    <!-- Toast 提示框 -->
+    <Toast 
+        :message="toastMessage" 
+        :type="toastType" 
+        :show="showToast" 
+        @close="showToast = false" 
+    />
 </template>
 
 <script setup>
 import { ref, onMounted} from 'vue'
 import { useRoute } from 'vue-router'
 import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType } from './state.js'
+import Toast from '../Toast.vue'
 
 
 const route = useRoute()
@@ -409,6 +418,11 @@ const createGroupType = ref('')
 const createGroupDescription = ref('')
 const creatingGroup = ref(false)
 const joiningGroup = ref(false)
+
+// Toast 相关变量
+const showToast = ref(false)
+const toastMessage = ref('')
+const toastType = ref('info')
 // 好友列表和群聊列表现在从 state.js 导入
 // 当前消息类型，1=单聊，2=群聊
 const messageType = ref(1)
@@ -451,6 +465,18 @@ onMounted(async () => {
     applyEyeCareMode()
     setupThemeListener()
 })
+
+// 显示 Toast 提示
+function showToastMessage(message, type = 'info', duration = 3000) {
+    toastMessage.value = message
+    toastType.value = type
+    showToast.value = true
+    
+    // 自动隐藏
+    setTimeout(() => {
+        showToast.value = false
+    }, duration)
+}
 
 function handleNavClick(tab) {
     navTab.value = tab
@@ -511,7 +537,7 @@ function addSearchedFriend(f) {
             } else if (data.code === 201) {
                 throw new Error(data.msg || '好友已存在');
             }
-            alert('好友请求已发送');
+            showToastMessage('好友请求已发送', 'success');
         } catch (e) {
             searchError.value = '添加失败: ' + e.message;
         }
@@ -541,12 +567,12 @@ async function createGroup() {
     const description = createGroupDescription.value.trim()
     
     if (!name) {
-        alert('请输入群组名称')
+        showToastMessage('请输入群组名称', 'warning')
         return
     }
     
     if (!type) {
-        alert('请选择群组类型')
+        showToastMessage('请选择群组类型', 'warning')
         return
     }
 
@@ -580,10 +606,10 @@ async function createGroup() {
             unread: 0
         })
 
-        alert('群组创建成功')
+        showToastMessage('群组创建成功', 'success')
         cancelCreateGroup()
     } catch (e) {
-        alert('创建群组失败: ' + e.message)
+        showToastMessage('创建群组失败: ' + e.message, 'error')
     } finally {
         creatingGroup.value = false
     }
@@ -592,7 +618,7 @@ async function createGroup() {
 async function joinGroup() {
     const name = newGroupName.value.trim()
     if (!name) {
-        alert('请输入群聊名称')
+        showToastMessage('请输入群聊名称', 'warning')
         return
     }
 
@@ -619,10 +645,10 @@ async function joinGroup() {
             unread: 0
         })
 
-        alert('成功加入群聊')
+        showToastMessage('成功加入群聊', 'success')
         cancelAddGroup()
     } catch (e) {
-        alert('加入群聊失败: ' + e.message)
+        showToastMessage('加入群聊失败: ' + e.message, 'error')
     } finally {
         joiningGroup.value = false
     }
@@ -692,7 +718,7 @@ async function handleFriendRequest(isAccept) {
             })
         });
     } catch (e) {
-        alert('操作失败: ' + e.message);
+        showToastMessage('操作失败: ' + e.message, 'error');
     } finally {
         showFriendRequest.value = false;
     }
@@ -714,7 +740,7 @@ async function handleFriendResponse() {
         // 刷新好友列表
         getFriendList()
     } catch (e) {
-        alert('操作失败: ' + e.message);
+        showToastMessage('操作失败: ' + e.message, 'error');
     } finally {
         showFriendReplyRequest.value = false;
     }
@@ -767,7 +793,7 @@ async function getGroupList() {
 // 更新个人信息
 async function updateProfile() {
     if (!profileForm.value.nickname.trim()) {
-        alert('昵称不能为空')
+        showToastMessage('昵称不能为空', 'warning')
         return
     }
 
@@ -789,13 +815,13 @@ async function updateProfile() {
 
         const data = await resp.json()
         if (data.code == 0) {
-            alert('更新成功')
+            showToastMessage('更新成功', 'success')
         }
         else {
-            alert('更新失败')
+            showToastMessage('更新失败', 'error')
         }
     } catch (e) {
-        alert('更新失败: ' + e.message)
+        showToastMessage('更新失败: ' + e.message, 'error')
     } finally {
         updatingProfile.value = false
     }
@@ -803,22 +829,22 @@ async function updateProfile() {
 // 修改密码
 async function updatePassword() {
     if (!passwordForm.value.currentPassword) {
-        alert('请输入当前密码')
+        showToastMessage('请输入当前密码', 'warning')
         return
     }
 
     if (!passwordForm.value.newPassword) {
-        alert('请输入新密码')
+        showToastMessage('请输入新密码', 'warning')
         return
     }
 
     if (passwordForm.value.newPassword.length < 6) {
-        alert('新密码长度不能少于6位')
+        showToastMessage('新密码长度不能少于6位', 'warning')
         return
     }
 
     if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-        alert('两次输入的新密码不一致')
+        showToastMessage('两次输入的新密码不一致', 'warning')
         return
     }
 
@@ -838,13 +864,13 @@ async function updatePassword() {
 
         const data = await resp.json()
         if (data.code === 200) {
-            alert('密码修改成功')
+            showToastMessage('密码修改成功', 'success')
             resetPasswordForm()
         } else {
             throw new Error(data.msg || '修改失败')
         }
     } catch (e) {
-        alert('修改失败: ' + e.message)
+        showToastMessage('修改失败: ' + e.message, 'error')
     } finally {
         updatingPassword.value = false
     }
@@ -890,10 +916,8 @@ function toggleEyeCareMode() {
 function applyTheme(theme) {
     const root = document.documentElement
     root.setAttribute('data-theme', theme)
-    
     // 移除之前的主题类
     root.classList.remove('light-theme', 'dark-theme', 'eye-care-theme')
-    
     // 添加新的主题类
     root.classList.add(`${theme}-theme`)
 }
@@ -923,10 +947,9 @@ function setupThemeListener() {
 async function publishMoment() {
     const content = newMomentContent.value.trim()
     if (!content) {
-        alert('请输入动态内容')
+        showToastMessage('请输入动态内容', 'warning')
         return
     }
-
     publishingMoment.value = true
     try {
         // 这里可以添加实际的API调用
@@ -946,7 +969,6 @@ async function publishMoment() {
         // } else {
         //     throw new Error(data.msg || '发布失败')
         // }
-
         // 暂时使用本地存储模拟
         const newMoment = {
             id: Date.now(),
@@ -954,18 +976,14 @@ async function publishMoment() {
             content: content,
             timestamp: new Date().toISOString()
         }
-        
         moments.value.unshift(newMoment)
-        
         // 保存到localStorage
         const savedMoments = JSON.parse(localStorage.getItem(`moments_${sessionKey}`) || '[]')
         savedMoments.unshift(newMoment)
         localStorage.setItem(`moments_${sessionKey}`, JSON.stringify(savedMoments))
-        
-        alert('动态发布成功')
         cancelAddMoment()
     } catch (e) {
-        alert('发布失败: ' + e.message)
+        showToastMessage('发布失败: ' + e.message, 'error')
     } finally {
         publishingMoment.value = false
     }
@@ -1000,7 +1018,7 @@ async function getMomentList() {
             }))
         }
     } catch (e) {
-        console.error('获取动态列表失败:', e)
+        showToastMessage('获取动态列表失败: ' + e.message, 'error')
     }
 }
 
@@ -1009,7 +1027,6 @@ function formatTime(timestamp) {
     const date = new Date(timestamp)
     const now = new Date()
     const diff = now - date
-    
     if (diff < 60000) { // 1分钟内
         return '刚刚'
     } else if (diff < 3600000) { // 1小时内
@@ -1030,14 +1047,11 @@ async function likeMoment(moment) {
     const momentId = parseInt(moment['moment_id'])
     console.log('parseInt后的值:', momentId)
     console.log('parseInt后的类型:', typeof momentId)
-
     try {
         // 这里可以添加实际的API调用
         const requestBody = {
             moment_id: momentId
         }
-        console.log('发送到后端的数据:', JSON.stringify(requestBody))
-        
         const resp = await fetch('/v1/api/comment/like', {
             method: 'POST',
             headers: {
@@ -1048,7 +1062,7 @@ async function likeMoment(moment) {
         })
         const data = await resp.json()
         if (data.code === 0) {
-            alert('点赞成功')
+            showToastMessage('点赞成功', 'success')
              if (!moment.likes) {
                 moment.likes = 0
             }
@@ -1056,18 +1070,15 @@ async function likeMoment(moment) {
             console.log('点赞动态:', moment)
         } else {
             throw new Error(data.msg || '你已经点赞过了')
-
         }
     } catch (e) {
-        alert('点赞失败: ' + e.message)
+        showToastMessage('点赞失败: ' + e.message, 'error')
     }
-   
 }
 
 // 切换评论显示状态
 function toggleComments(moment) {
     moment.showComments = !moment.showComments
-    
     // 如果是第一次打开评论区，初始化评论数据
     if (moment.showComments && !moment.comments) {
         moment.comments = []
@@ -1081,10 +1092,9 @@ function toggleComments(moment) {
 async function submitComment(moment) {
     const content = moment.newComment?.trim()
     if (!content) {
-        alert('请输入评论内容')
+        showToastMessage('请输入评论内容', 'warning')
         return
     }
-
     submittingComment.value = true
     try {
         const momentId = parseInt(moment['moment_id'] || moment.id)
@@ -1111,22 +1121,18 @@ async function submitComment(moment) {
                 content: content,
                 timestamp: new Date().toISOString()
             }
-            
             // 添加到评论列表
             if (!moment.comments) {
                 moment.comments = []
             }
             moment.comments.unshift(newComment)
-            
             // 清空输入框
             moment.newComment = ''
-            
-            alert('评论发布成功')
         } else {
             throw new Error(data.msg || '评论发布失败')
         }
     } catch (e) {
-        alert('评论发布失败: ' + e.message)
+        showToastMessage('评论发布失败: ' + e.message, 'error')
     } finally {
         submittingComment.value = false
     }
@@ -1136,14 +1142,12 @@ async function submitComment(moment) {
 async function getCommentList(moment) {
     try {
         const momentId = parseInt(moment['moment_id'] || moment.id)
-        
         const resp = await fetch(`/v1/api/comment/list?moment_id=${momentId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
-        
         const data = await resp.json()
         if (data.code === 0) {
             moment.comments = data.data.map(item => ({
@@ -1154,7 +1158,7 @@ async function getCommentList(moment) {
             }))
         }
     } catch (e) {
-        console.error('获取评论列表失败:', e)
+        showToastMessage('获取评论列表失败: ' + e.message, 'error')
         // 如果获取失败，初始化为空数组
         moment.comments = []
     }

@@ -429,21 +429,16 @@ function handleFragmentedMessage(fragment) {
             timestamp: Date.now()
         });
     }
-    
     const messageInfo = fragmentManager.get(messageId);
-    
     // 检查是否已经收到过这个分片
     if (messageInfo.fragments[fragment.fragmentIndex]) {
         console.warn(`重复收到分片 ${fragment.fragmentIndex}`);
         return null;
     }
-    
     // 存储分片
     messageInfo.fragments[fragment.fragmentIndex] = fragment;
     messageInfo.receivedCount++;
-    
     console.log(`收到分片 ${fragment.fragmentIndex + 1}/${fragment.totalFragments}`);
-    
     // 检查是否收到所有分片
     if (messageInfo.receivedCount === fragment.totalFragments) {
         const completeMessage = reassembleMessage(messageInfo.fragments);
@@ -459,7 +454,6 @@ function handleFragmentedMessage(fragment) {
 function reassembleMessage(fragments) {
     // 按索引排序确保正确顺序
     fragments.sort((a, b) => a.fragmentIndex - b.fragmentIndex);
-    
     // 拼接所有分片的file字段（这是序列化的protobuf数据）
     let totalSize = 0;
     fragments.forEach(fragment => {
@@ -467,10 +461,8 @@ function reassembleMessage(fragments) {
             totalSize += fragment.file.length;
         }
     });
-    
     const serializedData = new Uint8Array(totalSize);
     let offset = 0;
-    
     fragments.forEach(fragment => {
         if (fragment.file) {
             serializedData.set(fragment.file, offset);
