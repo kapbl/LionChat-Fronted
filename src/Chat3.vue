@@ -479,7 +479,7 @@ async function searchFriend() {
   searchError.value = ''
   searchResults.value = []
   try {
-    const resp = await fetch(`http://localhost/v1/api/friend/search?username=${encodeURIComponent(name)}`, {
+    const resp = await fetch(`http://62.234.192.227/v1/api/friend/search?username=${encodeURIComponent(name)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -502,7 +502,7 @@ async function searchFriend() {
 function addSearchedFriend(f) {
   const sendAddRequest = async () => {
     try {
-      const resp = await fetch('http://localhost/v1/api/friend/addFriend', {
+      const resp = await fetch('http://62.234.192.227/v1/api/friend/addFriend', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -552,7 +552,7 @@ async function createGroup() {
   
   creatingGroup.value = true
   try {
-    const resp = await fetch('http://localhost/v1/api/group/createGroup', {
+    const resp = await fetch('http://62.234.192.227/v1/api/group/createGroup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -593,7 +593,7 @@ async function joinGroup() {
   
   joiningGroup.value = true
   try {
-    const resp = await fetch('http://localhost/v1/api/group/joinGroup', {
+    const resp = await fetch('http://62.234.192.227/v1/api/group/joinGroup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -828,7 +828,7 @@ function sendMessage() {
 // 添加处理好友请求的方法
 async function handleFriendRequest(isAccept) {
   try {
-    const resp = await fetch('http://localhost/v1/api/friend/handleRequest', {  // Changed endpoint
+    const resp = await fetch('http://62.234.192.227/v1/api/friend/handleRequest', {  // Changed endpoint
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -849,7 +849,7 @@ async function handleFriendRequest(isAccept) {
 // 添加处理好友回复请求的方法
 async function handleFriendResponse() {
   try {
-    const resp = await fetch('http://localhost/v1/api/friend/handleResponse', {  // Changed endpoint
+    const resp = await fetch('http://62.234.192.227/v1/api/friend/handleResponse', {  // Changed endpoint
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -905,7 +905,7 @@ onBeforeUnmount(() => {
 // 获取好友列表
 async function getFriendList() {
   try {
-    const resp = await fetch('http://localhost/v1/api/friend/getFriendList', {
+    const resp = await fetch('http://62.234.192.227/v1/api/friend/getFriendList', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -928,7 +928,7 @@ async function getFriendList() {
 // 获取群组列表
 async function getGroupList() {
   try {
-    const resp = await fetch('http://localhost/v1/api/group/getGroupList', {
+    const resp = await fetch('http://62.234.192.227/v1/api/group/getGroupList', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -958,7 +958,7 @@ async function updateProfile() {
   
   updatingProfile.value = true
   try {
-    const resp = await fetch('http://localhost/v1/api/profile/updateProfile', {
+    const resp = await fetch('http://62.234.192.227/v1/api/profile/updateProfile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1010,7 +1010,7 @@ async function updatePassword() {
   
   updatingPassword.value = true
   try {
-    const resp = await fetch('http://localhost/v1/api/user/updatePassword', {
+    const resp = await fetch('http://62.234.192.227/v1/api/user/updatePassword', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

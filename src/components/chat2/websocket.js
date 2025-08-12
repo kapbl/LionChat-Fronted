@@ -11,7 +11,7 @@ export function initWebSocket(sessionKey = 'default', onMessageCallback, myUuid,
         wsConnected.value = false;
         return;
     }
-    const WS_URL = `ws://localhost/v1/api/webSocket/connect?token=${token}`;
+    const WS_URL = `ws://62.234.192.227/v1/api/webSocket/connect?token=${token}`;
 
     ws = new WebSocket(WS_URL);
     ws.binaryType = 'arraybuffer';
