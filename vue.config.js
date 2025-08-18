@@ -5,7 +5,7 @@ module.exports = defineConfig({
   devServer: {
     // proxy: {
     //   '/v1': {
-    //     target: 'http://62.234.192.227',
+    //     target: 'http://localhost',
     //     changeOrigin: true,
     //     secure: false,
     //     ws: true

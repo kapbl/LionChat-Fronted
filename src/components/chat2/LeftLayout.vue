@@ -76,6 +76,14 @@
                 </div>
                 <div v-if="friend.unread > 0" class="unread-bubble">{{ friend.unread }}</div>
             </div>
+            
+            <!-- 好友列表为空时的提示 -->
+            <div v-if="friends.length === 0 && !showAddFriend" class="empty-state">
+                <div class="empty-icon">👥</div>
+                <div class="empty-title">还没有好友</div>
+                <div class="empty-description">添加好友开始聊天吧！</div>
+                <button class="empty-action-btn" @click="showAddFriend = true">添加第一个好友</button>
+            </div>
         </div>
         <div v-else-if="navTab === 'group'">
             <div class="group-list-title-row">
@@ -139,6 +147,17 @@
                     <div class="group-uuid">{{ group.uuid }}</div>
                 </div>
                 <div v-if="group.unread > 0" class="group_unread-bubble">{{ group.unread }}</div>
+            </div>
+            
+            <!-- 群组列表为空时的提示 -->
+            <div v-if="groups.length === 0 && !showCreateGroup && !showAddGroup" class="empty-state">
+                <div class="empty-icon">💬</div>
+                <div class="empty-title">还没有群组</div>
+                <div class="empty-description">创建或加入群组与更多人聊天！</div>
+                <div class="empty-actions">
+                    <button class="empty-action-btn primary" @click="showCreateGroup = true">创建群组</button>
+                    <button class="empty-action-btn secondary" @click="showAddGroup = true">加入群组</button>
+                </div>
             </div>
         </div>
         <div v-else-if="navTab === 'moment'">
@@ -400,9 +419,9 @@ import Toast from '../Toast.vue'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
-const userinfo = JSON.parse(localStorage.getItem(`userinfo_${sessionKey}`) || '{}')
-const myName = userinfo.nickname || '我'
-const myUuid = userinfo.uuid
+const userinfo = ref('')
+const myName =ref('')
+const myUuid = ref('')
 const token = localStorage.getItem(`token_${sessionKey}`)
 const navTab = ref('friend') // 当前左侧tab，默认展示好友
 const showAddFriend = ref(false)
@@ -439,9 +458,9 @@ const updatingProfile = ref(false)
 const updatingPassword = ref(false)
 // 个人信息表单
 const profileForm = ref({
-    nickname: userinfo.nickname || '',
-    username: userinfo.username || '',
-    email: userinfo.email || ''
+    nickname: '',
+    username: '',
+    email: ''
 })
 // 密码修改表单
 const passwordForm = ref({
@@ -457,8 +476,10 @@ const moments = ref([])
 const submittingComment = ref(false)
 // const currentChatID = ref(0)
 onMounted(async () => {
-    getFriendList()
-    getGroupList()
+   await getFriendList()
+   await getGroupList()
+   await getMyInfo()
+
     
     // 初始化主题设置
     applyTheme(currentTheme.value)
@@ -497,7 +518,7 @@ async function searchFriend() {
     searchError.value = ''
     searchResults.value = []
     try {
-        const resp = await fetch(`http://localhost/v1/api/friend/search?username=${encodeURIComponent(name)}`, {
+        const resp = await fetch(`http://localhost:9922/v1/api/friend/search?username=${encodeURIComponent(name)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -520,7 +541,8 @@ async function searchFriend() {
 function addSearchedFriend(f) {
     const sendAddRequest = async () => {
         try {
-            const resp = await fetch('http://localhost/v1/api/friend/addFriend', {
+            const resp = await fetch('http://localhost:9922/v1/api/friend/addFriend', {
+
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -575,7 +597,7 @@ async function createGroup() {
     }
     creatingGroup.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/group/createGroup', {
+        const resp = await fetch('http://localhost:9922/v1/api/group/createGroup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -620,7 +642,7 @@ async function joinGroup() {
 
     joiningGroup.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/group/joinGroup', {
+        const resp = await fetch('http://localhost:9922/v1/api/group/joinGroup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -702,7 +724,7 @@ function saveUnreadCounts() {
 // 添加处理好友请求的方法
 async function handleFriendRequest(isAccept) {
     try {
-        const resp = await fetch('http://localhost/v1/api/friend/handleRequest', {  // Changed endpoint
+        const resp = await fetch('http://localhost:9922/v1/api/friend/handleRequest', {  // Changed endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -722,7 +744,7 @@ async function handleFriendRequest(isAccept) {
 // 添加处理好友回复请求的方法
 async function handleFriendResponse() {
     try {
-        const resp = await fetch('http://localhost/v1/api/friend/handleResponse', {  // Changed endpoint
+        const resp = await fetch('http://localhost:9922/v1/api/friend/handleResponse', {  // Changed endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -744,7 +766,7 @@ async function handleFriendResponse() {
 // 获取好友列表
 async function getFriendList() {
     try {
-        const resp = await fetch('http://localhost/v1/api/friend/getFriendList', {
+        const resp = await fetch('http://localhost:9922/v1/api/friend/friendList', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -752,6 +774,12 @@ async function getFriendList() {
         });
 
         const data = await resp.json();
+        console.log(data)
+        if (data.code == 4444) {
+            showToastMessage(data.msg, 'info')
+            return
+        }
+
         // 从localStorage获取未读消息计数
         const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
         friends.value = data.data.map(item => ({
@@ -763,10 +791,10 @@ async function getFriendList() {
         // alert(e.message);
     }
 }
-// 获取群组列表
-async function getGroupList() {
+// 获取用户信息
+async function getMyInfo() {
     try {
-        const resp = await fetch('http://localhost/v1/api/group/getGroupList', {
+        const resp = await fetch('http://localhost:9922/v1/api/profile/profileInfo', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -774,6 +802,46 @@ async function getGroupList() {
         });
 
         const data = await resp.json();
+        console.log(data.user_info.nickname)
+        if (data.code == 4444) {
+            showToastMessage(data.msg, 'info')
+            return
+        }
+        // 赋值给userinfo
+        userinfo.value = data.user_info
+        myName.value = data.user_info.nickname
+        myUuid.value = data.user_info.uuid
+        
+        // 更新个人信息表单的初始值
+        profileForm.value = {
+            nickname: data.user_info.nickname || '',
+            username: data.user_info.username || '',
+            email: data.user_info.email || ''
+        }
+    } catch (e) {
+        // alert(e.message);
+    }
+}
+// 获取群组列表
+async function getGroupList() {
+    console.log("group list:")
+    try {
+        const resp = await fetch('http://localhost:9922/v1/api/group/group-list', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await resp.json();
+        console.log("group list:", data.msg)
+        if (data.code == 1122) {
+            showToastMessage(data.msg, 'info')
+            return
+        }else if (data.code == 0) {
+            showToastMessage(data.msg, 'success')
+            return
+        }
+
         // 从localStorage获取未读消息计数
         const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
         groups.value = data.data.map(item => ({
@@ -795,7 +863,8 @@ async function updateProfile() {
 
     updatingProfile.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/profile/updateProfile', {
+        const resp = await fetch('http://localhost:9922/v1/api/profile/updateProfile', {
+
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -846,7 +915,8 @@ async function updatePassword() {
 
     updatingPassword.value = true
     try {
-        const resp = await fetch('http://localhost/v1/api/user/updatePassword', {
+        const resp = await fetch('http://localhost:9922/v1/api/user/updatePassword', {
+
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -949,7 +1019,7 @@ async function publishMoment() {
     publishingMoment.value = true
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch('http://localhost/v1/api/moment/createMoment', {
+        const resp = await fetch('http://localhost:9922/v1/api/moment/createMoment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -995,7 +1065,7 @@ function cancelAddMoment() {
 async function getMomentList() {
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch('http://localhost/v1/api/moment/list', {
+        const resp = await fetch('http://localhost:9922/v1/api/moment/moment-list', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -1048,7 +1118,7 @@ async function likeMoment(moment) {
         const requestBody = {
             moment_id: momentId
         }
-        const resp = await fetch('http://localhost/v1/api/comment/like', {
+        const resp = await fetch('http://localhost:9922/v1/api/comment/like', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1138,7 +1208,7 @@ async function submitComment(moment) {
 async function getCommentList(moment) {
     try {
         const momentId = parseInt(moment['moment_id'] || moment.id)
-        const resp = await fetch(`http://localhost/v1/api/comment/list?moment_id=${momentId}`, {
+        const resp = await fetch(`http://localhost:9922/v1/api/comment/list?moment_id=${momentId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -2572,6 +2642,80 @@ async function getCommentList(moment) {
 .empty-comment-text {
     font-size: 13px;
     color: #999;
+}
+
+/* 空状态样式 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+    min-height: 200px;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.8;
+}
+
+.empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.empty-description {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.empty-action-btn {
+    background: #42b983;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.empty-action-btn:hover {
+    background: #369870;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(66, 185, 131, 0.3);
+}
+
+.empty-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.empty-action-btn.primary {
+    background: #42b983;
+}
+
+.empty-action-btn.primary:hover {
+    background: #369870;
+}
+
+.empty-action-btn.secondary {
+    background: #6c757d;
+}
+
+.empty-action-btn.secondary:hover {
+    background: #5a6268;
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
 }
 
 /* 评论区滚动条样式 */
