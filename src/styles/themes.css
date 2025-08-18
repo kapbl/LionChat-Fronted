@@ -21,20 +21,21 @@
 
 /* 深色主题 */
 .dark-theme {
-  --bg-primary: #1a202c;
-  --bg-secondary: #2d3748;
-  --bg-tertiary: #4a5568;
-  --text-primary: #f7fafc;
-  --text-secondary: #e2e8f0;
-  --text-muted: #a0aec0;
-  --border-color: #4a5568;
+  --bg-primary: #36393f;
+  --bg-secondary: #2f3136;
+  --bg-tertiary: #202225;
+  --text-primary: #dcddde;
+  --text-secondary: #b9bbbe;
+  --text-muted: #72767d;
+  --border-color: #40444b;
   --shadow: rgba(0, 0, 0, 0.3);
-  --accent-color: #48bb78;
-  --accent-hover: #38a169;
-  --message-self: #2f855a;
-  --message-other: #4a5568;
-  --input-bg: #2d3748;
-  --input-border: #4a5568;
+  --accent-color: #5865f2;
+  --accent-hover: #4752c4;
+  --message-self: #5865f2;
+  --message-other: #40444b;
+  --input-bg: #40444b;
+  --input-border: #202225;
+  --bg-hover: #4752c4;
 }
 
 /* 护眼主题 */

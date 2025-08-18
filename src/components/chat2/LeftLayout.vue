@@ -59,7 +59,7 @@
                         v-html="f.avatar"></span>
                     <span class="search-avatar" v-else>{{ f.avatar || '😀' }}</span>
                     <span class="search-nickname">{{ f.nickname || f.username }}</span>
-                    <span class="search-uuid">({{ f.uuid }})</span>
+                    <span class="search-uuid">({{ f.email }})</span>
                     <span class="search-add">点击添加</span>
                 </div>
             </div>
@@ -67,12 +67,12 @@
             <div v-for="friend in friends" :key="friend.uuid" class="friend-item"
                 :class="{ active: friend.uuid === toUuid }" @click="selectFriend(friend)">
                 <div class="friend-avatar">
-                    <span v-if="friend.avatarType === 'emoji'" class="avatar-emoji">{{ friend.avatar }}</span>
+                    <span v-if="friend.avatarType === 'emoji'" class="avatar-emoji">{{ friend.avatar || '😀'}}</span>
                     <span v-else-if="friend.avatarType === 'svg'" v-html="friend.avatar"></span>
                 </div>
                 <div class="friend-info">
                     <div class="friend-name">{{ friend.name }}</div>
-                    <div class="friend-uuid">{{ friend.uuid }}</div>
+                    <div class="friend-uuid">{{ friend.email }}</div>
                 </div>
                 <div v-if="friend.unread > 0" class="unread-bubble">{{ friend.unread }}</div>
             </div>
@@ -285,6 +285,40 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 添加好友留言输入对话框 -->
+        <div v-if="showFriendMessageDialog" class="friend-message-overlay">
+            <div class="friend-message-dialog">
+                <h3>添加好友</h3>
+                <div class="friend-info-preview">
+                    <div class="friend-avatar-preview">
+                        <span v-if="selectedFriendToAdd?.avatar && selectedFriendToAdd.avatar.startsWith('<svg')" v-html="selectedFriendToAdd.avatar"></span>
+                        <span v-else>{{ selectedFriendToAdd?.avatar || '😀' }}</span>
+                    </div>
+                    <div class="friend-details">
+                        <div class="friend-name-preview">{{ selectedFriendToAdd?.nickname || selectedFriendToAdd?.username }}</div>
+                        <div class="friend-email-preview">{{ selectedFriendToAdd?.email }}</div>
+                    </div>
+                </div>
+                <div class="message-input-group">
+                    <label for="friendMessage">留言：</label>
+                    <textarea 
+                        id="friendMessage"
+                        v-model="friendMessage" 
+                        placeholder="请输入好友请求留言（可选）" 
+                        class="message-textarea"
+                        rows="3"
+                        maxlength="200"
+                    ></textarea>
+                    <div class="message-counter">{{ friendMessage.length }}/200</div>
+                </div>
+                <div class="message-buttons">
+                    <button @click="cancelFriendMessage" class="cancel-btn">取消</button>
+                    <button @click="confirmAddFriend" class="confirm-btn">发送请求</button>
+                </div>
+            </div>
+        </div>
+        
         <div v-if="showSettings" class="settings-overlay">
             <div class="settings-dialog">
                 <div class="settings-header">
@@ -413,15 +447,13 @@
 <script setup>
 import { ref, onMounted} from 'vue'
 import { useRoute } from 'vue-router'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType } from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, myUuid } from './state.js'
 import Toast from '../Toast.vue'
 
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
-const userinfo = ref('')
-const myName =ref('')
-const myUuid = ref('')
+const userinfo = ref({})
 const token = localStorage.getItem(`token_${sessionKey}`)
 const navTab = ref('friend') // 当前左侧tab，默认展示好友
 const showAddFriend = ref(false)
@@ -437,6 +469,11 @@ const createGroupType = ref('')
 const createGroupDescription = ref('')
 const creatingGroup = ref(false)
 const joiningGroup = ref(false)
+
+// 添加好友留言相关变量
+const showFriendMessageDialog = ref(false)
+const friendMessage = ref('')
+const selectedFriendToAdd = ref(null)
 
 // Toast 相关变量
 const showToast = ref(false)
@@ -518,7 +555,7 @@ async function searchFriend() {
     searchError.value = ''
     searchResults.value = []
     try {
-        const resp = await fetch(`http://localhost:9922/v1/api/friend/search?username=${encodeURIComponent(name)}`, {
+        const resp = await fetch(`http://localhost:9922/v1/api/friend/search?information=${encodeURIComponent(name)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -526,8 +563,9 @@ async function searchFriend() {
         })
         if (!resp.ok) throw new Error('网络错误')
         const data = await resp.json()
-        if (data && data.data && data.data.uuid) {
-            searchResults.value = [data.data]
+        if (data.code == 200) {
+            console.log(data)
+            searchResults.value = Array.isArray(data.data) ? data.data : [data.data]
         } else {
             searchError.value = '未找到相关用户'
         }
@@ -537,44 +575,61 @@ async function searchFriend() {
         searching.value = false
     }
 }
-// 添加发送好友请求的逻辑
+// 显示添加好友留言对话框
 function addSearchedFriend(f) {
-    const sendAddRequest = async () => {
-        try {
-            const resp = await fetch('http://localhost:9922/v1/api/friend/addFriend', {
+    selectedFriendToAdd.value = f
+    friendMessage.value = '你好，我想和你成为好友！' // 默认留言
+    showFriendMessageDialog.value = true
+}
 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    target_user_name: f.username,  // 目标用户名
-                    content: '你好，我是',
-                })
-            });
-            const data = await resp.json();
-            if (data.code !== 200) {
-                throw new Error(data.msg || '添加好友失败');
-            } else if (data.code === 201) {
-                throw new Error(data.msg || '好友已存在');
-            }
-            showToastMessage('好友请求已发送', 'success');
-        } catch (e) {
-            searchError.value = '添加失败: ' + e.message;
-        }
-    };
-    // 先发送好友请求，再添加本地列表
-    sendAddRequest().then(() => {
-        friends.value.push({
-            uuid: f.uuid,
-            name: f.nickname || f.username,
+// 取消添加好友留言
+function cancelFriendMessage() {
+    showFriendMessageDialog.value = false
+    selectedFriendToAdd.value = null
+    friendMessage.value = ''
+}
+
+// 确认添加好友并发送请求
+async function confirmAddFriend() {
+    if (!selectedFriendToAdd.value) return
+    
+    const f = selectedFriendToAdd.value
+    const message = friendMessage.value.trim() || '你好，我想和你成为好友！'
+    
+    try {
+        const resp = await fetch('http://localhost:9922/v1/api/friend/friends', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                target_user_name: f.username,  // 目标用户名
+                content: message,
+            })
         });
+        const data = await resp.json();
+        if (data.code !== 200) {
+            throw new Error(data.msg || '添加好友失败');
+        } else if (data.code === 201) {
+            throw new Error(data.msg || '好友已存在');
+        }
+        showToastMessage('好友请求已发送', 'success');
+        
+        // 关闭对话框并清理状态
+        showFriendMessageDialog.value = false
+        selectedFriendToAdd.value = null
+        friendMessage.value = ''
+        
+        // 清理搜索状态
         showAddFriend.value = false;
         newFriendName.value = '';
         searchResults.value = [];
         searchError.value = '';
-    });
+        
+    } catch (e) {
+        showToastMessage('添加失败: ' + e.message, 'error');
+    }
 }
 function cancelAddFriend() {
     showAddFriend.value = false
@@ -690,6 +745,7 @@ function selectFriend(friend) {
     currentChatID.value = friend.uuid
     friend.unread = 0
     currentChatTargetName.value = friend.name
+    console.log(currentChatID.value)
     // 保存未读消息计数到localStorage
     saveUnreadCounts()
 }
@@ -723,8 +779,10 @@ function saveUnreadCounts() {
 }
 // 添加处理好友请求的方法
 async function handleFriendRequest(isAccept) {
+    console.log(friendRequestInfo.value)
+
     try {
-        const resp = await fetch('http://localhost:9922/v1/api/friend/handleRequest', {  // Changed endpoint
+        const resp = await fetch('http://localhost:9922/v1/api/friend/friendResponse', {  // Changed endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -732,7 +790,7 @@ async function handleFriendRequest(isAccept) {
             },
             body: JSON.stringify({
                 status: isAccept ? 1 : 0,
-                target_uuid: friendRequestInfo.value.from
+                target_username: friendRequestInfo.value.fromUsername
             })
         });
     } catch (e) {
@@ -741,28 +799,7 @@ async function handleFriendRequest(isAccept) {
         showFriendRequest.value = false;
     }
 }
-// 添加处理好友回复请求的方法
-async function handleFriendResponse() {
-    try {
-        const resp = await fetch('http://localhost:9922/v1/api/friend/handleResponse', {  // Changed endpoint
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                status: 1,
-                target_uuid: friendResponseInfo.value.from
-            })
-        });
-        // 刷新好友列表
-        getFriendList()
-    } catch (e) {
-        showToastMessage('操作失败: ' + e.message, 'error');
-    } finally {
-        showFriendReplyRequest.value = false;
-    }
-}
+
 // 获取好友列表
 async function getFriendList() {
     try {
@@ -783,8 +820,9 @@ async function getFriendList() {
         // 从localStorage获取未读消息计数
         const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
         friends.value = data.data.map(item => ({
-            name: item.friend_nickname,
-            uuid: item.friend_uuid,
+            name: item.nickname,
+            email: item.email,
+            uuid : item.uuid,
             unread: savedUnreadCounts[item.friend_uuid] || 0
         }))
     } catch (e) {
@@ -1235,14 +1273,14 @@ async function getCommentList(moment) {
 .chat-layout {
     display: flex;
     height: 100vh;
-    background: #f5f5f5;
+    background: var(--bg-primary, #f5f5f5);
     overflow: hidden;
 }
 
 .left-list {
     width: 120px;
-    background: #fff;
-    border-right: 1px solid #eee;
+    background: var(--bg-secondary, #fff);
+    border-right: 1px solid var(--border-color, #eee);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1252,8 +1290,8 @@ async function getCommentList(moment) {
 .my-info {
     width: 100%;
     padding: 16px 0 8px 0;
-    border-bottom: 1px solid #eee;
-    background: #f7f7f7;
+    /* border-bottom: 1px solid var(--border-color, #eee); */
+    /* background: var(--bg-tertiary, #f7f7f7); */
     margin-bottom: 8px;
     text-align: center;
 }
@@ -1278,7 +1316,7 @@ async function getCommentList(moment) {
 
 .my-uuid {
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
     word-break: break-all;
 }
 
@@ -1301,7 +1339,7 @@ async function getCommentList(moment) {
 }
 
 .nav-item:hover {
-    background: #e6f7ff;
+    background: var(--nav-hover-bg, #f8f8f8);
 }
 
 .nav-icon {
@@ -1315,15 +1353,15 @@ async function getCommentList(moment) {
     right: 20px;
     width: 8px;
     height: 8px;
-    background: #ff4444;
+    background: var(--error-color, #ff4444);
     border-radius: 50%;
-    border: 2px solid #fff;
+    border: 2px solid var(--bg-secondary, #fff);
 }
 
 .activated-list {
     width: 380px;
-    background: #fff;
-    border-right: 1px solid #eee;
+    background: var(--bg-secondary, #fff);
+    border-right: 1px solid var(--border-color, #eee);
     display: flex;
     flex-direction: column;
     padding: 0 0 8px 0;
@@ -1342,6 +1380,7 @@ async function getCommentList(moment) {
     align-items: center;
     justify-content: space-between;
     padding: 0 8px 0 0;
+    border-bottom: 1px solid var(--border-color, #ddd);
 }
 
 .group-list-title {
@@ -1357,6 +1396,7 @@ async function getCommentList(moment) {
     align-items: center;
     justify-content: space-between;
     padding: 0 8px 0 0;
+    border-bottom: 1px solid var(--border-color, #ddd);
 }
 
 .group-actions {
@@ -1365,8 +1405,8 @@ async function getCommentList(moment) {
 }
 
 .create-group-btn {
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 4px 8px;
@@ -1376,12 +1416,12 @@ async function getCommentList(moment) {
 }
 
 .create-group-btn:hover {
-    background: #369870;
+    background: var(--accent-hover, #369870);
 }
 
 .add-friend-btn {
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 4px 12px;
@@ -1392,12 +1432,12 @@ async function getCommentList(moment) {
 }
 
 .add-friend-btn:hover {
-    background: #369870;
+    background: var(--accent-hover, #369870);
 }
 
 .add-group-btn {
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 4px 8px;
@@ -1407,14 +1447,14 @@ async function getCommentList(moment) {
 }
 
 .add-group-btn:hover {
-    background: #369870;
+    background: var(--accent-hover, #369870);
 }
 
 .add-friend-dialog {
     display: flex;
     align-items: center;
     padding: 8px 8px 8px 16px;
-    background: #f7f7f7;
+    background: var(--bg-tertiary, #f7f7f7);
     border-radius: 6px;
     margin: 8px 8px 0 8px;
 }
@@ -1422,15 +1462,15 @@ async function getCommentList(moment) {
 .add-friend-input {
     flex: 1;
     padding: 6px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color, #ccc);
     border-radius: 4px;
     font-size: 14px;
     margin-right: 8px;
 }
 
 .add-friend-confirm {
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 4px 10px;
@@ -1440,13 +1480,13 @@ async function getCommentList(moment) {
 }
 
 .add-friend-confirm:disabled {
-    background: #ccc;
+    background: var(--bg-disabled, #ccc);
     cursor: not-allowed;
 }
 
 .add-friend-cancel {
-    background: #eee;
-    color: #333;
+    background: var(--bg-tertiary, #eee);
+    color: var(--text-primary, #333);
     border: none;
     border-radius: 4px;
     padding: 4px 10px;
@@ -1455,11 +1495,11 @@ async function getCommentList(moment) {
 }
 
 .create-group-dialog {
-    background: #f7f7f7;
+    background: var(--bg-tertiary, #f7f7f7);
     border-radius: 8px;
     margin: 8px;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.1));
     max-height: 400px;
     overflow-y: auto;
 }
@@ -1479,18 +1519,18 @@ async function getCommentList(moment) {
 .create-group-form .form-group label {
     font-size: 13px;
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary, #333);
 }
 
 .create-group-input,
 .create-group-select {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
     border-radius: 4px;
     font-size: 14px;
-    background: #fff;
-    color: #333;
+    background: var(--bg-secondary, #fff);
+    color: var(--text-primary, #333);
     box-sizing: border-box;
 }
 
@@ -1498,11 +1538,11 @@ async function getCommentList(moment) {
     width: 100%;
     min-height: 80px;
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
     border-radius: 4px;
     font-size: 14px;
-    background: #fff;
-    color: #333;
+    background: var(--bg-secondary, #fff);
+    color: var(--text-primary, #333);
     resize: vertical;
     font-family: inherit;
     box-sizing: border-box;
@@ -1510,7 +1550,7 @@ async function getCommentList(moment) {
 
 .create-group-form .char-count {
     font-size: 12px;
-    color: #666;
+    color: var(--text-secondary, #666);
     text-align: right;
     margin-top: 2px;
 }
@@ -1523,8 +1563,8 @@ async function getCommentList(moment) {
 }
 
 .create-group-confirm {
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 8px 16px;
@@ -1534,18 +1574,18 @@ async function getCommentList(moment) {
 }
 
 .create-group-confirm:hover:not(:disabled) {
-    background: #369970;
+    background: var(--accent-hover, #369970);
 }
 
 .create-group-confirm:disabled {
-    background: #ccc;
+    background: var(--bg-disabled, #ccc);
     cursor: not-allowed;
 }
 
 .create-group-cancel {
-    background: #eee;
-    color: #333;
-    border: 1px solid #ddd;
+    background: var(--bg-tertiary, #eee);
+    color: var(--text-primary, #333);
+    border: 1px solid var(--border-color, #ddd);
     border-radius: 4px;
     padding: 8px 16px;
     font-size: 14px;
@@ -1577,7 +1617,7 @@ async function getCommentList(moment) {
 
 .add-group-confirm {
     background: #42b983;
-    color: #fff;
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 4px 10px;
@@ -1592,8 +1632,8 @@ async function getCommentList(moment) {
 }
 
 .add-group-cancel {
-    background: #eee;
-    color: #333;
+    background: var(--bg-tertiary, #eee);
+    color: var(--text-primary, #333);
     border: none;
     border-radius: 4px;
     padding: 4px 10px;
@@ -1609,7 +1649,7 @@ async function getCommentList(moment) {
     border-radius: 4px;
     margin: 4px 8px;
     transition: background 0.2s;
-    background: #f8f8f8;
+    background: var(--bg-tertiary, #f8f8f8);
 }
 
 .group-item {
@@ -1620,17 +1660,17 @@ async function getCommentList(moment) {
     border-radius: 4px;
     margin: 4px 8px;
     transition: background 0.2s;
-    background: #f8f8f8;
+    background: var(--bg-tertiary, #f8f8f8);
 }
 
 .friend-item.active,
 .friend-item:hover {
-    background: #e6f7ff;
+    background: var(--bg-hover, #e6f7ff);
 }
 
 .group-item.active,
 .group-item:hover {
-    background: #e6f7ff;
+    background: var(--bg-hover, #e6f7ff);
 }
 
 .friend-avatar {
@@ -1641,7 +1681,7 @@ async function getCommentList(moment) {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: #f0f0f0;
+    background: var(--bg-tertiary, #f0f0f0);
     overflow: hidden;
     font-size: 24px;
 }
@@ -1654,7 +1694,7 @@ async function getCommentList(moment) {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: #f0f0f0;
+    background: var(--bg-tertiary, #f0f0f0);
     overflow: hidden;
     font-size: 24px;
 }
@@ -1672,13 +1712,13 @@ async function getCommentList(moment) {
 
 .friend-uuid {
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
     word-break: break-all;
 }
 
 .unread-bubble {
-    background: #ff4444;
-    color: white;
+    background: var(--error-color, #ff4444);
+    color: var(--text-primary, white);
     min-width: 20px;
     height: 20px;
     border-radius: 10px;
@@ -1717,13 +1757,13 @@ async function getCommentList(moment) {
 
 .group-uuid {
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
     word-break: break-all;
 }
 
 .group_unread-bubble {
-    background: #ff4444;
-    color: white;
+    background: var(--error-color, #ff4444);
+    color: var(--text-primary, white);
     min-width: 20px;
     height: 20px;
     border-radius: 10px;
@@ -1739,23 +1779,37 @@ async function getCommentList(moment) {
 
 .friend-request-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 20px;
+    right: 20px;
+    background: transparent;
     z-index: 1000;
+    pointer-events: none;
+}
+
+.friend-request-overlay .friend-request-dialog {
+    pointer-events: auto;
 }
 
 .friend-request-dialog {
-    background: white;
+    background: var(--bg-secondary, white);
     padding: 20px;
-    border-radius: 8px;
-    width: 300px;
+    border-radius: 12px;
+    width: 320px;
     text-align: center;
+    box-shadow: 0 8px 32px var(--shadow-color, rgba(0, 0, 0, 0.15));
+    border: 1px solid var(--border-color, #e0e0e0);
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .request-buttons {
@@ -1767,7 +1821,7 @@ async function getCommentList(moment) {
 
 .accept-btn {
     background: #42b983;
-    color: white;
+    color: var(--text-primary, white);
     padding: 8px 20px;
 }
 
@@ -1779,23 +1833,27 @@ async function getCommentList(moment) {
 
 .friend-response-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 20px;
+    right: 20px;
+    background: transparent;
     z-index: 1000;
+    pointer-events: none;
+}
+
+.friend-response-overlay .friend-response-dialog {
+    pointer-events: auto;
 }
 
 .friend-response-dialog {
-    background: white;
+    background: var(--bg-secondary, white);
     padding: 20px;
-    border-radius: 8px;
-    width: 300px;
+    border-radius: 12px;
+    width: 320px;
     text-align: center;
+    box-shadow: 0 8px 32px var(--shadow-color, rgba(0, 0, 0, 0.15));
+    border: 1px solid var(--border-color, #e0e0e0);
+    animation: slideInFromRight 0.3s ease-out;
+    color: var(--text-primary, #333);
 }
 
 .ok-btn {
@@ -1835,16 +1893,16 @@ async function getCommentList(moment) {
 }
 
 .message.self .msg-bubble {
-    background: #d1f5d3;
-    color: #222;
+    background: var(--msg-self-bg, #d1f5d3);
+    color: var(--text-primary, #222);
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 16px;
     align-items: flex-end;
 }
 
 .message.other .msg-bubble {
-    background: #e6e6e6;
-    color: #222;
+    background: var(--msg-other-bg, #e6e6e6);
+    color: var(--text-primary, #222);
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 16px;
     align-items: flex-start;
@@ -1856,7 +1914,7 @@ async function getCommentList(moment) {
 }
 
 .timestamp {
-    color: #888;
+    color: var(--text-secondary, #888);
     font-size: 12px;
     margin-left: 8px;
 }
@@ -1864,8 +1922,8 @@ async function getCommentList(moment) {
 .input-area-wrap {
     display: flex;
     flex-direction: column;
-    border-top: 1px solid #eee;
-    background: #fff;
+    border-top: 1px solid var(--border-color, #eee);
+    background: var(--bg-secondary, #fff);
     position: relative;
 }
 
@@ -1882,7 +1940,7 @@ async function getCommentList(moment) {
 .input-area {
     display: flex;
     padding: 12px 0 2px 0;
-    background: #fff;
+    background: var(--bg-secondary, #fff);
     align-items: flex-end;
 }
 
@@ -1898,13 +1956,13 @@ async function getCommentList(moment) {
 }
 
 .input-action-btn:hover {
-    background: #e6f7ff;
+    background: var(--bg-hover, #e6f7ff);
 }
 
 .input-area .msg-textarea {
     flex: 1;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color, #ccc);
     border-radius: 4px;
     margin-right: 8px;
     min-width: 0;
@@ -1916,13 +1974,15 @@ async function getCommentList(moment) {
     overflow-y: auto;
     box-sizing: border-box;
     transition: height 0.2s;
+    background: var(--bg-secondary, #fff);
+    color: var(--text-primary, #333);
 }
 
 .input-area button {
     padding: 8px 24px;
     border: none;
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
@@ -1938,17 +1998,17 @@ async function getCommentList(moment) {
 }
 
 .input-area button:hover {
-    background: #369870;
+    background: var(--accent-hover, #369870);
 }
 
 .nav-item.active {
-    background: #e6f7ff;
-    color: #42b983;
+    background: var(--bg-hover, #e6f7ff);
+    color: var(--accent-color, #42b983);
 }
 
 .search-result-list {
-    background: #fff;
-    border: 1px solid #eee;
+    background: var(--bg-secondary, #fff);
+    border: 1px solid var(--border-color, #eee);
     border-radius: 6px;
     margin: 8px 8px 0 8px;
     padding: 6px 0;
@@ -1966,7 +2026,7 @@ async function getCommentList(moment) {
 }
 
 .search-result-item:hover {
-    background: #e6f7ff;
+    background: var(--bg-hover, #e6f7ff);
 }
 
 .search-avatar {
@@ -1985,18 +2045,33 @@ async function getCommentList(moment) {
 }
 
 .search-uuid {
-    color: #888;
+    color: var(--text-secondary, #888);
     font-size: 12px;
     margin-right: 8px;
 }
 
 .search-add {
-    color: #42b983;
-    font-size: 13px;
+    color: var(--accent-color, #42b983);
+    font-size: 12px;
+    background: var(--bg-secondary, #f8f9fa);
+    border: 1px solid var(--accent-color, #42b983);
+    border-radius: 12px;
+    padding: 4px 8px;
+    margin-left: auto;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.search-add:hover {
+    background: var(--accent-color, #42b983);
+    color: var(--bg-secondary, #fff);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px var(--shadow-color, rgba(0, 0, 0, 0.1));
 }
 
 .search-error {
-    color: #f00;
+    color: var(--error-color, #f00);
     padding: 6px 12px;
 }
 
@@ -2007,7 +2082,7 @@ async function getCommentList(moment) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-bg, rgba(0, 0, 0, 0.5));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2015,13 +2090,13 @@ async function getCommentList(moment) {
 }
 
 .settings-dialog {
-    background: white;
+    background: var(--bg-secondary, white);
     border-radius: 12px;
     width: 500px;
     max-width: 90vw;
     max-height: 80vh;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 30px var(--shadow-color, rgba(0, 0, 0, 0.2));
 }
 
 .settings-header {
@@ -2029,15 +2104,15 @@ async function getCommentList(moment) {
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    border-bottom: 1px solid #eee;
-    background: #f8f9fa;
+    border-bottom: 1px solid var(--border-color, #eee);
+    background: var(--bg-tertiary, #f8f9fa);
 }
 
 .settings-header h3 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary, #333);
 }
 
 .close-btn {
@@ -2045,7 +2120,7 @@ async function getCommentList(moment) {
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #666;
+    color: var(--text-secondary, #666);
     padding: 0;
     width: 30px;
     height: 30px;
@@ -2057,8 +2132,8 @@ async function getCommentList(moment) {
 }
 
 .close-btn:hover {
-    background: #e9ecef;
-    color: #333;
+    background: var(--bg-hover, #e9ecef);
+    color: var(--text-primary, #333);
 }
 
 .settings-content {
@@ -2067,8 +2142,8 @@ async function getCommentList(moment) {
 
 .settings-tabs {
     display: flex;
-    border-bottom: 1px solid #eee;
-    background: #f8f9fa;
+    border-bottom: 1px solid var(--border-color, #eee);
+    background: var(--bg-tertiary, #f8f9fa);
 }
 
 .tab-btn {
@@ -2079,20 +2154,20 @@ async function getCommentList(moment) {
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    color: #666;
+    color: var(--text-secondary, #666);
     transition: all 0.2s;
     border-bottom: 3px solid transparent;
 }
 
 .tab-btn:hover {
-    background: #e9ecef;
-    color: #333;
+    background: var(--bg-hover, #e9ecef);
+    color: var(--text-primary, #333);
 }
 
 .tab-btn.active {
-    color: #42b983;
-    background: white;
-    border-bottom-color: #42b983;
+    color: var(--accent-color, #42b983);
+    background: var(--bg-secondary, white);
+    border-bottom-color: var(--accent-color, #42b983);
 }
 
 .settings-panel {
@@ -2109,28 +2184,30 @@ async function getCommentList(moment) {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary, #333);
     font-size: 14px;
 }
 
 .form-input {
     width: 100%;
     padding: 12px 16px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.2s;
     box-sizing: border-box;
+    background: var(--bg-secondary, #fff);
+    color: var(--text-primary, #333);
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #42b983;
-    box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
+    border-color: var(--accent-color, #42b983);
+    box-shadow: 0 0 0 3px var(--accent-shadow, rgba(66, 185, 131, 0.1));
 }
 
 .form-input:hover {
-    border-color: #bbb;
+    border-color: var(--border-hover, #bbb);
 }
 
 .form-actions {
@@ -2138,12 +2215,12 @@ async function getCommentList(moment) {
     gap: 12px;
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-color, #eee);
 }
 
 .save-btn {
-    background: #42b983;
-    color: white;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, white);
     border: none;
     padding: 12px 24px;
     border-radius: 8px;
@@ -2155,7 +2232,7 @@ async function getCommentList(moment) {
 }
 
 .save-btn:hover:not(:disabled) {
-    background: #369870;
+    background: var(--accent-hover, #369870);
     transform: translateY(-1px);
 }
 
@@ -2167,7 +2244,7 @@ async function getCommentList(moment) {
 
 .cancel-btn {
     background: #f8f9fa;
-    color: #666;
+    color: var(--text-secondary, #666);
     border: 1px solid #ddd;
     padding: 12px 24px;
     border-radius: 8px;
@@ -2181,7 +2258,7 @@ async function getCommentList(moment) {
 .cancel-btn:hover {
     background: #e9ecef;
     border-color: #bbb;
-    color: #333;
+    color: var(--text-primary, #333);
 }
 
 /* 此刻功能样式 */
@@ -2189,26 +2266,35 @@ async function getCommentList(moment) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid #eee;
-    background: #f8f9fa;
+    padding: 14px;
+    border-bottom: 1px solid var(--border-color, #ddd)
 }
 
 .moment-list-title {
     font-weight: bold;
     font-size: 16px;
-    color: #333;
+    color: var(--text-primary, #333);
 }
 
 .add-moment-btn {
-    background: #42b983;
-    color: white;
+     
+    /* color: var(--text-primary, #fff);
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: 4px;
+    padding: 4px 12px;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    margin-left: 8px;
+    transition: background 0.2s; */
+
+    background: var(--accent-color, #42b983);
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 .add-moment-btn:hover {
@@ -2251,12 +2337,12 @@ async function getCommentList(moment) {
 
 .char-count {
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
 }
 
 .publish-moment-btn {
     background: #42b983;
-    color: white;
+    color: var(--text-primary, white);
     border: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -2277,7 +2363,7 @@ async function getCommentList(moment) {
 
 .cancel-moment-btn {
     background: #f8f9fa;
-    color: #666;
+    color: var(--text-secondary, #666);
     border: 1px solid #ddd;
     padding: 8px 16px;
     border-radius: 6px;
@@ -2327,19 +2413,19 @@ async function getCommentList(moment) {
 .moment-author {
     font-weight: bold;
     font-size: 14px;
-    color: #333;
+    color: var(--text-primary, #333);
     margin-bottom: 2px;
 }
 
 .moment-time {
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
 }
 
 .moment-content {
     font-size: 14px;
     line-height: 1.6;
-    color: #333;
+    color: var(--text-primary, #333);
     word-break: break-word;
     white-space: pre-wrap;
 }
@@ -2358,7 +2444,7 @@ async function getCommentList(moment) {
     gap: 4px;
     background: none;
     border: none;
-    color: #666;
+    color: var(--text-secondary, #666);
     font-size: 13px;
     cursor: pointer;
     padding: 4px 8px;
@@ -2368,7 +2454,7 @@ async function getCommentList(moment) {
 
 .moment-action-btn:hover {
     background: #f5f5f5;
-    color: #333;
+    color: var(--text-primary, #333);
 }
 
 .moment-action-btn svg {
@@ -2378,7 +2464,7 @@ async function getCommentList(moment) {
 .empty-moments {
     text-align: center;
     padding: 60px 20px;
-    color: #888;
+    color: var(--text-secondary, #888);
 }
 
 .empty-icon {
@@ -2388,7 +2474,7 @@ async function getCommentList(moment) {
 
 .empty-text {
     font-size: 14px;
-    color: #999;
+    color: var(--text-muted, #999);
 }
 
 /* 主题设置样式 */
@@ -2400,7 +2486,7 @@ async function getCommentList(moment) {
     margin: 0 0 16px 0;
     font-size: 16px;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary, #333);
 }
 
 .theme-options {
@@ -2414,18 +2500,18 @@ async function getCommentList(moment) {
     text-align: center;
     cursor: pointer;
     padding: 12px;
-    border: 2px solid #e1e5e9;
+    border: 2px solid var(--border-color, #e1e5e9);
     border-radius: 8px;
     transition: all 0.2s;
 }
 
 .theme-option:hover {
-    border-color: #42b983;
+    border-color: var(--accent-color, #42b983);
 }
 
 .theme-option.active {
-    border-color: #42b983;
-    background: rgba(66, 185, 131, 0.1);
+    border-color: var(--accent-color, #42b983);
+    background: var(--accent-shadow, rgba(66, 185, 131, 0.1));
 }
 
 .theme-preview {
@@ -2434,17 +2520,17 @@ async function getCommentList(moment) {
     margin: 0 auto 8px;
     border-radius: 4px;
     overflow: hidden;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
 }
 
 .preview-header {
     height: 12px;
-    background: #f5f5f5;
+    background: var(--bg-tertiary, #f5f5f5);
 }
 
 .preview-content {
     height: 28px;
-    background: #fff;
+    background: var(--bg-secondary, #fff);
 }
 
 .light-preview .preview-header {
@@ -2473,7 +2559,7 @@ async function getCommentList(moment) {
 
 .theme-option span {
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary, #666);
 }
 
 .form-group label {
@@ -2481,14 +2567,14 @@ async function getCommentList(moment) {
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #333;
+    color: var(--text-primary, #333);
     margin-bottom: 8px;
 }
 
 .form-group small {
     display: block;
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
     margin-top: 4px;
     margin-left: 24px;
 }
@@ -2616,19 +2702,19 @@ async function getCommentList(moment) {
 .comment-author {
     font-weight: 600;
     font-size: 13px;
-    color: #333;
+    color: var(--text-primary, #333);
     margin-bottom: 2px;
 }
 
 .comment-time {
     font-size: 11px;
-    color: #888;
+    color: var(--text-secondary, #888);
 }
 
 .comment-content {
     font-size: 13px;
     line-height: 1.5;
-    color: #333;
+    color: var(--text-primary, #333);
     word-break: break-word;
     white-space: pre-wrap;
 }
@@ -2636,12 +2722,12 @@ async function getCommentList(moment) {
 .empty-comments {
     text-align: center;
     padding: 20px;
-    color: #888;
+    color: var(--text-secondary, #888);
 }
 
 .empty-comment-text {
     font-size: 13px;
-    color: #999;
+    color: var(--text-muted, #999);
 }
 
 /* 空状态样式 */
@@ -2652,7 +2738,7 @@ async function getCommentList(moment) {
     justify-content: center;
     padding: 40px 20px;
     text-align: center;
-    color: #666;
+    color: var(--text-secondary, #666);
     min-height: 200px;
 }
 
@@ -2665,7 +2751,7 @@ async function getCommentList(moment) {
 .empty-title {
     font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary, #333);
     margin-bottom: 8px;
 }
 
@@ -2678,7 +2764,7 @@ async function getCommentList(moment) {
 
 .empty-action-btn {
     background: #42b983;
-    color: #fff;
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 6px;
     padding: 10px 20px;
@@ -2735,5 +2821,176 @@ async function getCommentList(moment) {
 
 .comments-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* 添加好友留言对话框样式 */
+.friend-message-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.friend-message-dialog {
+    background: var(--bg-secondary, white);
+    padding: 24px;
+    border-radius: 16px;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: 0 12px 48px var(--shadow-color, rgba(0, 0, 0, 0.2));
+    border: 1px solid var(--border-color, #e0e0e0);
+    animation: slideInFromCenter 0.3s ease-out;
+    color: var(--text-primary, #333);
+}
+
+@keyframes slideInFromCenter {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.friend-message-dialog h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary, #333);
+    text-align: center;
+}
+
+.friend-info-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-primary, #f8f9fa);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color, #e9ecef);
+}
+
+.friend-avatar-preview {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-color, #42b983);
+    color: white;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.friend-details {
+    flex: 1;
+}
+
+.friend-name-preview {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-primary, #333);
+    margin-bottom: 4px;
+}
+
+.friend-email-preview {
+    font-size: 14px;
+    color: var(--text-secondary, #666);
+}
+
+.message-input-group {
+    margin-bottom: 24px;
+}
+
+.message-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary, #333);
+    font-size: 14px;
+}
+
+.message-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color, #e0e0e0);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    background: var(--bg-primary, white);
+    color: var(--text-primary, #333);
+    transition: border-color 0.2s ease;
+}
+
+.message-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color, #42b983);
+    box-shadow: 0 0 0 3px var(--accent-color-alpha, rgba(66, 185, 131, 0.1));
+}
+
+.message-textarea::placeholder {
+    color: var(--text-placeholder, #999);
+}
+
+.message-counter {
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+    margin-top: 4px;
+}
+
+.message-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.message-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.cancel-btn {
+    background: var(--bg-tertiary, #f8f9fa);
+    color: var(--text-secondary, #666);
+    border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.cancel-btn:hover {
+    background: var(--bg-hover, #e9ecef);
+    color: var(--text-primary, #333);
+}
+
+.confirm-btn {
+    background: var(--accent-color, #42b983);
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: var(--accent-hover, #369870);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--accent-color-alpha, rgba(66, 185, 131, 0.3));
+}
+
+.confirm-btn:active {
+    transform: translateY(0);
 }
 </style>

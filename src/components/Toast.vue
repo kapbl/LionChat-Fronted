@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="toast" :class="type">
+  <div v-if="visible" class="toast" :class="[type, `${currentTheme}-theme`]">
     <div class="toast-content">
       <span class="toast-icon">{{ getIcon() }}</span>
       <span class="toast-message">{{ message }}</span>
@@ -8,7 +8,22 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+
+const currentTheme = ref(localStorage.getItem('chat-theme') || 'light')
+
+onMounted(() => {
+  // 监听主题变化
+  const observer = new MutationObserver(() => {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light'
+    currentTheme.value = theme
+  })
+  
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  })
+})
 
 const props = defineProps({
   message: {
@@ -137,26 +152,53 @@ function getIcon() {
   }
 }
 
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .toast.info {
-    background-color: #1e3a8a;
-    color: #93c5fd;
-  }
-  
-  .toast.success {
-    background-color: #14532d;
-    color: #86efac;
-  }
-  
-  .toast.warning {
-    background-color: #92400e;
-    color: #fbbf24;
-  }
-  
-  .toast.error {
-    background-color: #7f1d1d;
-    color: #fca5a5;
-  }
+/* 深色主题支持 */
+.toast.dark-theme.info {
+  background-color: #1e3a8a;
+  color: #93c5fd;
+  border-left-color: #3b82f6;
+}
+
+.toast.dark-theme.success {
+  background-color: #14532d;
+  color: #86efac;
+  border-left-color: #22c55e;
+}
+
+.toast.dark-theme.warning {
+  background-color: #92400e;
+  color: #fbbf24;
+  border-left-color: #f59e0b;
+}
+
+.toast.dark-theme.error {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+  border-left-color: #ef4444;
+}
+
+/* 护眼主题支持 */
+.toast.eye-care-theme.info {
+  background-color: #f0ead6;
+  color: #5d4e37;
+  border-left-color: #8fbc8f;
+}
+
+.toast.eye-care-theme.success {
+  background-color: #e6f3e6;
+  color: #3c2e26;
+  border-left-color: #8fbc8f;
+}
+
+.toast.eye-care-theme.warning {
+  background-color: #f7f3e9;
+  color: #8b7355;
+  border-left-color: #d4c4a8;
+}
+
+.toast.eye-care-theme.error {
+  background-color: #f0ead6;
+  color: #8b7355;
+  border-left-color: #d4c4a8;
 }
 </style>

@@ -553,7 +553,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: var(--modal-overlay, rgba(0, 0, 0, 0.9));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -561,12 +561,12 @@ onBeforeUnmount(() => {
 }
 
 .call-interface {
-  background: white;
+  background: var(--bg-secondary, white);
   border-radius: 20px;
   padding: 40px;
   text-align: center;
   min-width: 300px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px var(--shadow-dark, rgba(0, 0, 0, 0.3));
 }
 
 .video-call-interface {
@@ -580,7 +580,7 @@ onBeforeUnmount(() => {
 .remote-video-container {
   flex: 1;
   position: relative;
-  background: #000;
+  background: var(--video-bg, #000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -596,7 +596,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 20px;
   left: 20px;
-  color: white;
+  color: var(--text-primary, white);
   z-index: 10;
 }
 
@@ -619,10 +619,10 @@ onBeforeUnmount(() => {
   right: 20px;
   width: 200px;
   height: 150px;
-  background: #000;
+  background: var(--video-bg, #000);
   border-radius: 10px;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--border-light, rgba(255, 255, 255, 0.3));
   transition: all 0.3s ease;
   z-index: 10;
 }
@@ -642,8 +642,8 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 5px;
   right: 5px;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
+  background: var(--btn-overlay, rgba(0, 0, 0, 0.5));
+  color: var(--text-primary, white);
   border: none;
   border-radius: 50%;
   width: 25px;
@@ -662,7 +662,7 @@ onBeforeUnmount(() => {
   transform: translateX(-50%);
   display: flex;
   gap: 15px;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--controls-bg, rgba(0, 0, 0, 0.7));
   padding: 15px 25px;
   border-radius: 50px;
   backdrop-filter: blur(10px);
@@ -680,12 +680,12 @@ onBeforeUnmount(() => {
 .caller-info h3 {
   margin: 0 0 10px 0;
   font-size: 24px;
-  color: #333;
+  color: var(--text-primary, #333);
 }
 
 .caller-info p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary, #666);
   font-size: 16px;
 }
 
@@ -696,8 +696,8 @@ onBeforeUnmount(() => {
 }
 
 .accept-btn {
-  background: #4CAF50;
-  color: white;
+  background: var(--success-color, #4CAF50);
+  color: var(--text-primary, white);
   border: none;
   border-radius: 50px;
   padding: 15px 30px;
@@ -707,12 +707,12 @@ onBeforeUnmount(() => {
 }
 
 .accept-btn:hover {
-  background: #45a049;
+  background: var(--success-hover, #45a049);
 }
 
 .reject-btn {
-  background: #f44336;
-  color: white;
+  background: var(--error-color, #f44336);
+  color: var(--text-primary, white);
   border: none;
   border-radius: 50%;
   width: 60px;
@@ -726,12 +726,12 @@ onBeforeUnmount(() => {
 }
 
 .reject-btn:hover {
-  background: #da190b;
+  background: var(--error-hover, #da190b);
 }
 
 .control-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: var(--btn-secondary, rgba(255, 255, 255, 0.2));
+  color: var(--text-primary, white);
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -745,12 +745,12 @@ onBeforeUnmount(() => {
 }
 
 .control-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--btn-secondary-hover, rgba(255, 255, 255, 0.3));
   transform: scale(1.1);
 }
 
 .control-btn.active {
-  background: #f44336;
+  background: var(--error-color, #f44336);
 }
 
 .incoming-call {

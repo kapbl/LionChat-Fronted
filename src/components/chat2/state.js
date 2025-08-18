@@ -1,5 +1,9 @@
 import { ref } from 'vue'
 
+// 用户信息全局变量
+export const myName = ref('')
+export const myUuid = ref('')
+
 export const toUuid = ref('')
 // 好友列表，头像类型随机
 export const friends = ref([])

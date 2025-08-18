@@ -1,9 +1,12 @@
 <template>
-    <div class="login-bg">
+    <div class="login-bg" :class="`${currentTheme}-theme`">
       <div class="login-container">
         <div class="login-left">
           <div class="login-form-wrapper">
             <div class="login-header">
+              <div class="welcome-message">
+                {{ texts.welcomeBack }}
+              </div>
               <div class="header-top">
                 <h1 class="login-title">{{ tab === 'login' ? texts.signIn : texts.signUp }}</h1>
                 <button @click="toggleLanguage" class="language-toggle">
@@ -105,7 +108,9 @@
               <div class="orb orb-4"></div>
               <div class="orb orb-5"></div>
             </div>
-            <div class="brand-logo">{{ texts.brandName }}</div>
+            <div class="brand-logo">
+              {{ typewriterText }}<span class="cursor" :class="{ 'blinking': !isTyping }">|</span>
+            </div>
           </div>
         </div>
       </div>
@@ -113,8 +118,8 @@
   </template>
   
   <script setup>
-  import { ref, computed } from 'vue'
-  import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
   
   const tab = ref('login')
   const email = ref('') // 邮箱 必填
@@ -127,9 +132,34 @@
   const language = ref('zh') // 默认中文
   const router = useRouter()
   
+  // 主题相关状态
+  const currentTheme = ref('dark') // 默认深色主题
+  
+  // 打字机效果相关状态
+  const typewriterText = ref('')
+  const currentTextIndex = ref(0)
+  const isTyping = ref(true)
+  
+  // 打字机文本内容
+  const typewriterTexts = {
+    zh: [
+      'Lion Chat',
+      '像狮子一样大声说出来',
+      '勇敢表达你的想法',
+      '连接每一个声音'
+    ],
+    en: [
+      'Lion Chat',
+      'Roar like a lion',
+      'Express boldly',
+      'Connect every voice'
+    ]
+  }
+
   // 多语言文本配置
   const translations = {
     zh: {
+      welcomeBack: '欢迎回来',
       signIn: '登录',
       signUp: '注册',
       email: '邮箱',
@@ -151,6 +181,7 @@
       networkError: '网络错误'
     },
     en: {
+      welcomeBack: 'Welcome Back',
       signIn: 'Sign in',
       signUp: 'Sign up',
       email: 'Email',
@@ -178,6 +209,10 @@
   // 切换语言
   function toggleLanguage() {
     language.value = language.value === 'zh' ? 'en' : 'zh'
+    // 切换语言时重新开始打字机效果
+    clearTimers()
+    currentTextIndex.value = 0
+    startTypewriter()
   }
   
   async function doLogin() {
@@ -188,7 +223,7 @@
 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email.value, password: password.value })
+        body: JSON.stringify({ account: email.value, password: password.value })
       })
       // 返回的数据
       const data = await resp.json()
@@ -248,12 +283,81 @@
     password.value = ''
     nickname.value = ''
   }
+
+  // 打字机效果函数
+  let typewriterTimer = null
+  let textChangeTimer = null
+
+  function startTypewriter() {
+    const currentTexts = typewriterTexts[language.value]
+    const targetText = currentTexts[currentTextIndex.value]
+    let charIndex = 0
+    
+    typewriterText.value = ''
+    isTyping.value = true
+    
+    function typeChar() {
+      if (charIndex < targetText.length) {
+        typewriterText.value += targetText.charAt(charIndex)
+        charIndex++
+        typewriterTimer = setTimeout(typeChar, 100) // 打字速度
+      } else {
+        isTyping.value = false
+        // 显示完成后等待3秒，然后开始删除
+        textChangeTimer = setTimeout(startErasing, 3000)
+      }
+    }
+    
+    typeChar()
+  }
+
+  function startErasing() {
+    isTyping.value = true
+    
+    function eraseChar() {
+      if (typewriterText.value.length > 0) {
+        typewriterText.value = typewriterText.value.slice(0, -1)
+        typewriterTimer = setTimeout(eraseChar, 50) // 删除速度更快
+      } else {
+        // 切换到下一个文本
+        currentTextIndex.value = (currentTextIndex.value + 1) % typewriterTexts[language.value].length
+        // 等待500ms后开始下一个文本
+        textChangeTimer = setTimeout(startTypewriter, 500)
+      }
+    }
+    
+    eraseChar()
+  }
+
+  // 清理定时器
+  function clearTimers() {
+    if (typewriterTimer) {
+      clearTimeout(typewriterTimer)
+      typewriterTimer = null
+    }
+    if (textChangeTimer) {
+      clearTimeout(textChangeTimer)
+      textChangeTimer = null
+    }
+  }
+
+  // 生命周期钩子
+  onMounted(() => {
+    startTypewriter()
+    // 初始化主题
+    const savedTheme = localStorage.getItem('chat-theme') || 'dark'
+    currentTheme.value = savedTheme
+  })
+
+  onUnmounted(() => {
+    clearTimers()
+  })
   </script>
   
   <style scoped>
   .login-bg {
     min-height: 100vh;
-    background: #0a0a0a;
+    background: var(--bg-primary, #0a0a0a);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -265,7 +369,7 @@
     width: 100%;
     max-width: 1200px;
     height: 100vh;
-    background: #0a0a0a;
+    background: var(--bg-primary, #0a0a0a);
   }
 
   .login-left {
@@ -274,7 +378,7 @@
      align-items: center;
      justify-content: center;
      padding: 40px;
-     background: #0a0a0a;
+     background: var(--bg-primary, #0a0a0a);
      position: relative;
      z-index: 1001;
    }
@@ -288,6 +392,15 @@
     margin-bottom: 40px;
   }
 
+  .welcome-message {
+    font-size: 16px;
+    color: var(--text-secondary, #a1a1aa);
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
   .header-top {
     display: flex;
     justify-content: space-between;
@@ -297,15 +410,15 @@
   .login-title {
     font-size: 32px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     margin: 0;
     line-height: 1.2;
   }
 
   .language-toggle {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    color: var(--text-primary, #ffffff);
     padding: 8px 16px;
     border-radius: 8px;
     font-size: 14px;
@@ -316,8 +429,8 @@
   }
 
   .language-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--bg-tertiary, rgba(255, 255, 255, 0.2));
+    border-color: var(--border-color, rgba(255, 255, 255, 0.3));
     transform: translateY(-1px);
   }
 
@@ -340,7 +453,7 @@
   .form-label {
     font-size: 14px;
     font-weight: 500;
-    color: #a1a1aa;
+    color: var(--text-secondary, #a1a1aa);
     margin: 0;
   }
 
@@ -352,7 +465,7 @@
 
   .forgot-link {
     font-size: 14px;
-    color: #3b82f6;
+    color: var(--accent-color, #3b82f6);
     text-decoration: none;
     font-weight: 500;
   }
@@ -364,10 +477,10 @@
   .form-input {
     width: 100%;
     padding: 12px 16px;
-    background: #18181b;
-    border: 1px solid #27272a;
+    background: var(--input-bg, #18181b);
+    border: 1px solid var(--border-color, #27272a);
     border-radius: 8px;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     font-size: 16px;
     outline: none;
     transition: all 0.2s ease;
@@ -375,8 +488,8 @@
   }
 
   .form-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--accent-color, #3b82f6);
+    box-shadow: 0 0 0 3px var(--accent-shadow, rgba(59, 130, 246, 0.1));
   }
 
   .form-input::placeholder {
@@ -413,16 +526,18 @@
 
   .submit-btn {
     width: 100%;
-    padding: 12px 16px;
-    background: #3b82f6;
-    color: #ffffff;
+    padding: 16px;
+    background: var(--accent-color, #3b82f6);
+    color: var(--text-primary, #ffffff);
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 8px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -430,12 +545,18 @@
   }
 
   .submit-btn:hover:not(:disabled) {
-    background: #2563eb;
+    background: var(--accent-hover, #2563eb);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--accent-shadow, rgba(59, 130, 246, 0.3));
   }
 
   .submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    background: var(--bg-disabled, #374151);
+    color: var(--text-disabled, #6b7280);
+    transform: none;
+    box-shadow: none;
   }
 
   .loading-spinner {
@@ -480,7 +601,7 @@
   .switch-link {
     background: none;
     border: none;
-    color: #3b82f6;
+    color: var(--accent-color, #3b82f6);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -586,11 +707,34 @@
   .brand-logo {
     font-size: 48px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     z-index: 10;
     position: relative;
     text-transform: lowercase;
     letter-spacing: -2px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cursor {
+    color: var(--accent-color, #3b82f6);
+    font-weight: 400;
+    animation: blink 1s infinite;
+  }
+
+  .cursor.blinking {
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    51%, 100% {
+      opacity: 0;
+    }
   }
 
   .register-field {

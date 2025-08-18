@@ -131,7 +131,7 @@ import { useRoute } from 'vue-router'
 import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType } from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, myUuid } from './state.js'
 
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
@@ -139,11 +139,12 @@ import { ackManager } from './ackManager.js'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
-const messages = computed(() => chatMessages.value[toUuid.value] || [])
+const messages = computed(() => {
+    console.log('messages computed - toUuid.value:', toUuid.value, 'chatMessages.value:', chatMessages.value)
+    return chatMessages.value[toUuid.value] || []
+})
 const input = ref('')
 const userinfo = JSON.parse(localStorage.getItem(`userinfo_${sessionKey}`) || '{}')
-const myName = userinfo.nickname || '我'
-const myUuid = userinfo.uuid
 const MessageType = ref(null)
 let ws = null
 const wsConnected = ref(false)
@@ -213,8 +214,8 @@ function sendFileMessage(fileData) {
     
     const msgObj = {
         avatar: '',
-        fromUsername: myName,
-        from: myUuid,
+        fromUsername: myName.value,
+        from: myUuid.value,
         to: toUuid.value,
         content: fileData.fileName,
         contentType: contentType,
@@ -278,8 +279,8 @@ function sendVoiceMessage(voiceData) {
     const msgObj = {
         ...voiceData,
         avatar: '',
-        fromUsername: myName,
-        from: myUuid,
+        fromUsername: myName.value,
+        from: myUuid.value,
         to: toUuid.value,
         content: '语音消息',
         contentType: 4,
@@ -333,10 +334,19 @@ function saveUnreadCounts() {
 }
 // WebSocket 长轮询
 onMounted(async () => {
+    // 初始化全局用户信息
+    if (!myName.value) {
+        myName.value = userinfo.nickname || '我'
+    }
+    if (!myUuid.value) {
+        myUuid.value = userinfo.uuid
+    }
+    
     // 加载 proto
     const root = await protobuf.load('/message.proto')
     MessageType.value = root.lookup('protocol.Message')
-    initWebSocket(sessionKey, handleWebSocketMessage, myUuid, MessageType.value)
+    // console.log('Loaded MessageType:', MessageType.value)
+    initWebSocket(sessionKey, handleWebSocketMessage, myUuid.value, MessageType.value)
 
     ws = getWebSocket()
     if (ws) {
@@ -346,7 +356,7 @@ onMounted(async () => {
     }
     
     // 初始化ACK管理器
-    ackManager.init(myUuid, MessageType.value)
+    ackManager.init(myUuid.value, MessageType.value)
     
     // 监听消息已读确认事件
     window.addEventListener('messagesAcked', handleMessagesAcked)
@@ -373,8 +383,10 @@ function handleWebSocketMessage(event) {
     }
     
     const { from, to, file } = decoded;
-    const isPrivateMessage = to === myUuid;
+    console.log('WebSocket message - from:', from, 'to:', to, 'myUuid.value:', myUuid.value, 'decoded:', decoded);
+    const isPrivateMessage = to === myUuid.value;
     const chatId = isPrivateMessage ? from : to;
+    console.log('Calculated chatId:', chatId, 'isPrivateMessage:', isPrivateMessage);
     try {
         switch (decoded.contentType) {
             case 1: // 文本消息
@@ -484,7 +496,7 @@ function reassembleMessage(fragments) {
 
 // 重构后的消息处理函数
 function handleTextMessage(decoded, chatId, isPrivateMessage) {
-    updateUnreadCount(chatId, isPrivateMessage);
+    //updateUnreadCount(chatId, isPrivateMessage);
     addMessageToChat(chatId, decoded);
 }
 
@@ -616,17 +628,16 @@ function updateUnreadCount(chatId, isPrivateMessage) {
 
 function addMessageToChat(chatId, decoded) {
     chatMessages.value[chatId] ??= [];
-    console.log("audio: ", decoded)
-    
+    console.log('addMessageToChat - chatId:', chatId)
     // 为消息生成唯一ID（如果没有的话）
     if (!decoded.messageId) {
         decoded.messageId = generateMessageId()
     }
-    
     chatMessages.value[chatId].push({
         ...decoded,
         timestamp: decoded.timestamp || Date.now()
     });
+    console.log('chatMessages after push:', chatMessages.value)
 }
 
 function getMimeType(fileSuffix) {
@@ -737,8 +748,8 @@ function sendMessage() {
     // 消息体
     const msgObj = {
         avatar: '',
-        fromUsername: myName,
-        from: myUuid,
+        fromUsername: myName.value,
+        from: myUuid.value,
         to: toUuid.value,
         content: input.value,
         contentType: 1, // 文字
@@ -827,7 +838,7 @@ function generateMessageId() {
 
 // 注册消息元素到ACK管理器
 function registerMessageElement(msg, el) {
-    if (el && msg.messageId && msg.from !== myUuid) {
+    if (el && msg.messageId && msg.from !== myUuid.value) {
         nextTick(() => {
             ackManager.registerMessageElement(msg.messageId, el, msg.from)
         })
@@ -884,8 +895,8 @@ watch(() => document.hidden, (hidden) => {
     background: #369870;
 }
 .add-friend-btn {
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
     padding: 4px 12px;
@@ -898,9 +909,9 @@ watch(() => document.hidden, (hidden) => {
 .chat-container {
     flex: 1;
     margin: 0;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
     border-radius: 0;
-    background: #fafafa;
+    background: var(--bg-primary, #fafafa);
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -912,10 +923,10 @@ watch(() => document.hidden, (hidden) => {
     line-height: 48px;
     font-size: 18px;
     font-weight: bold;
-    color: #333;
+    color: var(--text-primary, #333);
     padding: 0 24px;
-    border-bottom: 1px solid #eee;
-    background: #f7f7f7;
+    /* border-bottom: 1px solid var(--border-color, #eee); */
+    /* background: var(--bg-secondary, #f7f7f7); */
 }
 
 .chat-header-center {
@@ -941,8 +952,8 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .voice-call-btn {
-    background: #42b983;
-    color: white;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, white);
     border: none;
     border-radius: 50%;
     width: 36px;
@@ -956,7 +967,7 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .voice-call-btn:hover {
-    background: #369870;
+    background: var(--accent-hover, #369870);
     transform: scale(1.1);
 }
 
@@ -965,8 +976,8 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .video-call-btn {
-    background: #4285f4;
-    color: white;
+    background: var(--video-call-color, #4285f4);
+    color: var(--text-primary, white);
     border: none;
     border-radius: 50%;
     width: 36px;
@@ -981,7 +992,7 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .video-call-btn:hover {
-    background: #3367d6;
+    background: var(--video-call-hover, #3367d6);
     transform: scale(1.1);
 }
 
@@ -1023,7 +1034,7 @@ watch(() => document.hidden, (hidden) => {
 
 .msg-bubble:hover {
     transform: scale(1.02);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow-light, rgba(0, 0, 0, 0.1));
 }
 
 @keyframes bubbleAppear {
@@ -1073,7 +1084,7 @@ watch(() => document.hidden, (hidden) => {
     display: flex;
     align-items: center;
     padding: 8px 12px;
-    background: #e6e6e6;
+    background: var(--bg-tertiary, #e6e6e6);
     border-radius: 16px;
     border-bottom-left-radius: 4px;
     margin-bottom: 12px;
@@ -1088,7 +1099,7 @@ watch(() => document.hidden, (hidden) => {
 .typing-dot {
     width: 6px;
     height: 6px;
-    background: #888;
+    background: var(--text-secondary, #888);
     border-radius: 50%;
     animation: typing 1.4s infinite;
 }
@@ -1102,8 +1113,8 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .message.self .msg-bubble {
-    background: #d1f5d3;
-    color: #222;
+    background: var(--msg-self-bg, #d1f5d3);
+    color: var(--text-primary, #222);
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 16px;
     align-items: flex-end;
@@ -1111,8 +1122,8 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .message.other .msg-bubble {
-    background: #e6e6e6;
-    color: #222;
+    background: var(--msg-other-bg, #e6e6e6);
+    color: var(--text-primary, #222);
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 16px;
     align-items: flex-start;
@@ -1132,7 +1143,7 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .timestamp {
-    color: #888;
+    color: var(--text-secondary, #888);
     font-size: 12px;
 }
 
@@ -1142,20 +1153,20 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .read-indicator {
-    color: #42b983;
+    color: var(--accent-color, #42b983);
     font-weight: bold;
 }
 
 .unread-indicator {
-    color: #888;
+    color: var(--text-secondary, #888);
     font-weight: bold;
 }
 
 .input-area-wrap {
     display: flex;
     flex-direction: column;
-    border-top: 1px solid #eee;
-    background: #fff;
+    border-top: 1px solid var(--border-color, #eee);
+    background: var(--bg-secondary, #fff);
     position: relative;
 }
 
@@ -1163,16 +1174,16 @@ watch(() => document.hidden, (hidden) => {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 4px 0 0 0;
+    padding: 0px 0 0 0;
     margin-left: 2px;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
     gap: 4px;
 }
 
 .input-area {
     display: flex;
     padding: 12px 0 2px 0;
-    background: #fff;
+    background: var(--bg-secondary, #fff);
     align-items: flex-end;
 }
 
@@ -1188,13 +1199,13 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .input-action-btn:hover {
-    background: #e6f7ff;
+    background: var(--bg-hover, #e6f7ff);
 }
 
 .input-area .msg-textarea {
     flex: 1;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color, #ccc);
     border-radius: 4px;
     margin-right: 8px;
     min-width: 0;
@@ -1211,8 +1222,8 @@ watch(() => document.hidden, (hidden) => {
 .input-area button {
     padding: 8px 24px;
     border: none;
-    background: #42b983;
-    color: #fff;
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, #fff);
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
@@ -1228,27 +1239,27 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .input-area button:hover {
-    background: #369870;
+    background: var(--accent-hover, #369870);
 }
 
 .ws-status {
-    color: #f00;
+    color: var(--error-color, #f00);
     text-align: center;
     padding: 8px;
 }
 
 .nav-item.active {
-    background: #e6f7ff;
-    color: #42b983;
+    background: var(--bg-hover, #e6f7ff);
+    color: var(--accent-color, #42b983);
 }
 
 .emoji-panel {
     display: flex;
     flex-wrap: wrap;
-    background: #fff;
-    border: 1px solid #eee;
+    background: var(--bg-secondary, #fff);
+    border: 1px solid var(--border-color, #eee);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px var(--shadow-light, rgba(0, 0, 0, 0.08));
     padding: 8px 8px 0 8px;
     margin-bottom: 4px;
     max-width: 420px;
@@ -1270,7 +1281,7 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .emoji-item:hover {
-    background: #e6f7ff;
+    background: var(--bg-hover, #e6f7ff);
 }
 
 /* 图片预览模态框样式 */
@@ -1280,7 +1291,7 @@ watch(() => document.hidden, (hidden) => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--modal-overlay, rgba(0, 0, 0, 0.8));
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1306,7 +1317,7 @@ watch(() => document.hidden, (hidden) => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--modal-overlay, rgba(0, 0, 0, 0.8));
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1330,7 +1341,7 @@ watch(() => document.hidden, (hidden) => {
     position: absolute;
     top: -40px;
     right: 0;
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--close-btn-bg, rgba(255, 255, 255, 0.8));
     border: none;
     border-radius: 50%;
     width: 32px;
@@ -1344,6 +1355,6 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .close-preview-btn:hover {
-    background: rgba(255, 255, 255, 1);
+    background: var(--close-btn-hover, rgba(255, 255, 255, 1));
 }
 </style>

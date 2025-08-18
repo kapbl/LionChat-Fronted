@@ -414,7 +414,7 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--modal-overlay, rgba(0, 0, 0, 0.8));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -422,12 +422,12 @@ onBeforeUnmount(() => {
 }
 
 .call-interface {
-  background: white;
+  background: var(--bg-secondary, rgb(0, 0, 0));
   border-radius: 20px;
   padding: 40px;
   text-align: center;
   min-width: 300px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px var(--shadow-dark, rgba(0, 0, 0, 0.3));
 }
 
 .caller-info {
@@ -442,12 +442,12 @@ onBeforeUnmount(() => {
 .caller-info h3 {
   margin: 0 0 10px 0;
   font-size: 24px;
-  color: #333;
+  color: var(--text-primary, #333);
 }
 
 .caller-info p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary, #666);
   font-size: 16px;
 }
 
@@ -465,8 +465,8 @@ onBeforeUnmount(() => {
 }
 
 .accept-btn {
-  background: #4CAF50;
-  color: white;
+  background: var(--success-color, #4CAF50);
+  color: var(--text-primary, white);
   border: none;
   border-radius: 50px;
   padding: 15px 30px;
@@ -476,12 +476,12 @@ onBeforeUnmount(() => {
 }
 
 .accept-btn:hover {
-  background: #45a049;
+  background: var(--success-hover, #45a049);
 }
 
 .reject-btn {
-  background: #f44336;
-  color: white;
+  background: var(--error-color, #f44336);
+  color: var(--text-primary, white);
   border: none;
   border-radius: 50px;
   padding: 15px 30px;
@@ -491,11 +491,11 @@ onBeforeUnmount(() => {
 }
 
 .reject-btn:hover {
-  background: #da190b;
+  background: var(--error-hover, #da190b);
 }
 
 .control-btn {
-  background: #f0f0f0;
+  background: var(--btn-secondary, #f0f0f0);
   border: none;
   border-radius: 50%;
   width: 50px;
@@ -506,12 +506,12 @@ onBeforeUnmount(() => {
 }
 
 .control-btn:hover {
-  background: #e0e0e0;
+  background: var(--btn-secondary-hover, #e0e0e0);
 }
 
 .control-btn.active {
-  background: #2196F3;
-  color: white;
+  background: var(--accent-color, #2196F3);
+  color: var(--text-primary, white);
 }
 
 .incoming-call {
