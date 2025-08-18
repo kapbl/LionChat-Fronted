@@ -40,7 +40,7 @@
     errorMsg.value = ''
     loading.value = true
     try {
-      const resp = await fetch('http://62.234.192.227/v1/api/user/login', {
+      const resp = await fetch('http://localhost/v1/api/user/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.value, password: password.value })
@@ -66,7 +66,7 @@
     errorMsg.value = ''
     loading.value = true
     try {
-      const resp = await fetch('http://62.234.192.227/v1/api/user/register', {
+      const resp = await fetch('http://localhost/v1/api/user/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.value, password: password.value, nickname: nickname.value })
