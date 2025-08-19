@@ -5,11 +5,12 @@ module.exports = defineConfig({
   devServer: {
     // proxy: {
     //   '/v1': {
-    //     target: 'http://localhost',
+    //     target: 'https://chlion.lionchat.online',
     //     changeOrigin: true,
-    //     secure: false,
+    //     secure: true,
     //     ws: true
-    //   },
+    //   }
     // }
   }
 })
+// https://chlion.lionchat.online/v1/api/user/register

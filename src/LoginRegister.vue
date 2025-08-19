@@ -219,7 +219,7 @@ import { useRouter } from 'vue-router'
     errorMsg.value = ''
     loading.value = true
     try {
-      const resp = await fetch('http://localhost:9922/v1/api/user/login', {
+      const resp = await fetch('https://chlion.lionchat.online/v1/api/user/login', {
 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,7 +247,7 @@ import { useRouter } from 'vue-router'
     errorMsg.value = ''
     loading.value = true
     try {
-      const resp = await fetch('http://localhost:9922/v1/api/user/register', {
+      const resp = await fetch('https://chlion.lionchat.online/v1/api/user/register', {
 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
