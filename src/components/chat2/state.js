@@ -1,5 +1,8 @@
 import { ref } from 'vue'
 
+// API 基础 URL
+export const API_BASE_URL = 'https://chlion.lionchat.online'
+
 // 用户信息全局变量
 export const myName = ref('')
 export const myUuid = ref('')

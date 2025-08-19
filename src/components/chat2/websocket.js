@@ -5,13 +5,13 @@ let ws = null;
 export const wsConnected = ref(false);
 
 export function initWebSocket(sessionKey = 'default', onMessageCallback, myUuid, MessageType) {
-    const token = localStorage.getItem(`token_${sessionKey}`);
+    const token = localStorage.getItem(`${sessionKey}`);
     if (!token) {
         console.error('No token found for session:', sessionKey);
         wsConnected.value = false;
         return;
     }
-    const WS_URL = `ws://chlion.lionchat.online/v1/api/webSocket/connect?token=${token}`;
+    const WS_URL = `wss://chlion.lionchat.online/v1/api/webSocket/connect?token=${token}`;
     ws = new WebSocket(WS_URL);
     ws.binaryType = 'arraybuffer';
 

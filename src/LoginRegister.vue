@@ -120,6 +120,7 @@
   <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
   
   const tab = ref('login')
   const email = ref('') // 邮箱 必填
@@ -219,7 +220,7 @@ import { useRouter } from 'vue-router'
     errorMsg.value = ''
     loading.value = true
     try {
-      const resp = await fetch('https://chlion.lionchat.online/v1/api/user/login', {
+      const resp = await fetch(`${API_BASE_URL}/v1/api/user/login`, {
 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,7 +231,7 @@ import { useRouter } from 'vue-router'
       console.log(data)
       if (data.code === 2002) {
         const sessionKey = getSessionKey(); // 获取session key
-        localStorage.setItem(`token_${sessionKey}`, data.access_token)
+        localStorage.setItem(`${sessionKey}`, data.access_token)
         // localStorage.setItem(`userinfo_${sessionKey}`, JSON.stringify(data.data.userinfo))
         router.push({ path: '/chat', query: { session: sessionKey } }) 
       } else {
@@ -247,7 +248,7 @@ import { useRouter } from 'vue-router'
     errorMsg.value = ''
     loading.value = true
     try {
-      const resp = await fetch('https://chlion.lionchat.online/v1/api/user/register', {
+      const resp = await fetch(`${API_BASE_URL}/v1/api/user/register`, {
 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

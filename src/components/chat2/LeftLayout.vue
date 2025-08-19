@@ -447,14 +447,14 @@
 <script setup>
 import { ref, onMounted} from 'vue'
 import { useRoute } from 'vue-router'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, myUuid } from './state.js'
+import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, myUuid, API_BASE_URL } from './state.js'
 import Toast from '../Toast.vue'
 
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
 const userinfo = ref({})
-const token = localStorage.getItem(`token_${sessionKey}`)
+const token = localStorage.getItem(`${sessionKey}`)
 const navTab = ref('friend') // 当前左侧tab，默认展示好友
 const showAddFriend = ref(false)
 const newFriendName = ref('')
@@ -555,7 +555,7 @@ async function searchFriend() {
     searchError.value = ''
     searchResults.value = []
     try {
-        const resp = await fetch(`/v1/api/friend/search?information=${encodeURIComponent(name)}`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/friend/search?information=${encodeURIComponent(name)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -597,7 +597,7 @@ async function confirmAddFriend() {
     const message = friendMessage.value.trim() || '你好，我想和你成为好友！'
     
     try {
-        const resp = await fetch('/v1/api/friend/friends', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/friend/friends`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -652,7 +652,7 @@ async function createGroup() {
     }
     creatingGroup.value = true
     try {
-        const resp = await fetch('/v1/api/group/createGroup', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/group/createGroup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -697,7 +697,7 @@ async function joinGroup() {
 
     joiningGroup.value = true
     try {
-        const resp = await fetch('/v1/api/group/joinGroup', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/group/joinGroup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -782,7 +782,7 @@ async function handleFriendRequest(isAccept) {
     console.log(friendRequestInfo.value)
 
     try {
-        const resp = await fetch('/v1/api/friend/friendResponse', {  // Changed endpoint
+        const resp = await fetch(`${API_BASE_URL}/v1/api/friend/friendResponse`, {  // Changed endpoint
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -803,7 +803,7 @@ async function handleFriendRequest(isAccept) {
 // 获取好友列表
 async function getFriendList() {
     try {
-        const resp = await fetch('/v1/api/friend/friendList', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/friend/friendList`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -832,7 +832,7 @@ async function getFriendList() {
 // 获取用户信息
 async function getMyInfo() {
     try {
-        const resp = await fetch('/v1/api/profile/profileInfo', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/profile/profileInfo`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -864,7 +864,7 @@ async function getMyInfo() {
 async function getGroupList() {
     console.log("group list:")
     try {
-        const resp = await fetch('/v1/api/group/group-list', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/group/group-list`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -901,7 +901,7 @@ async function updateProfile() {
 
     updatingProfile.value = true
     try {
-        const resp = await fetch('/v1/api/profile/updateProfile', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/profile/updateProfile`, {
 
             method: 'POST',
             headers: {
@@ -953,7 +953,7 @@ async function updatePassword() {
 
     updatingPassword.value = true
     try {
-        const resp = await fetch('/v1/api/user/updatePassword', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/user/updatePassword`, {
 
             method: 'POST',
             headers: {
@@ -1057,7 +1057,7 @@ async function publishMoment() {
     publishingMoment.value = true
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch('/v1/api/moment/createMoment', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/moment/createMoment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1103,7 +1103,7 @@ function cancelAddMoment() {
 async function getMomentList() {
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch('/v1/api/moment/moment-list', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/moment/moment-list`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -1156,7 +1156,7 @@ async function likeMoment(moment) {
         const requestBody = {
             moment_id: momentId
         }
-        const resp = await fetch('/v1/api/comment/like', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/comment/like`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1246,7 +1246,7 @@ async function submitComment(moment) {
 async function getCommentList(moment) {
     try {
         const momentId = parseInt(moment['moment_id'] || moment.id)
-        const resp = await fetch(`/v1/api/comment/list?moment_id=${momentId}`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/comment/list?moment_id=${momentId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`

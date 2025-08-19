@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import Chat from './Chat.vue'
 import LoginRegister from './LoginRegister.vue'
 
@@ -21,7 +21,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes
 })
 
@@ -30,7 +30,7 @@ router.beforeEach((to, from, next) => {
   // 从URL参数获取sessionKey
   const sessionKey = to.query.session // 修改这里
   // 根据sessionKey获取token
-  const token = sessionKey ? localStorage.getItem(`token_${sessionKey}`) : null
+  const token = sessionKey ? localStorage.getItem(`${sessionKey}`) : null
   // console.log('当前路由:', to.path)
   // console.log('sessionKey:', sessionKey)
   // console.log('token:', token)
