@@ -1,5 +1,6 @@
 
 import { ref } from 'vue';
+import { API_BASE_URL_WS } from './state.js'
 
 let ws = null;
 export const wsConnected = ref(false);
@@ -11,7 +12,7 @@ export function initWebSocket(sessionKey = 'default', onMessageCallback, myUuid,
         wsConnected.value = false;
         return;
     }
-    const WS_URL = `wss://chlion.lionchat.online/v1/api/webSocket/connect?token=${token}`;
+    const WS_URL = `${API_BASE_URL_WS}/v1/api/webSocket/connect?token=${token}`;
     ws = new WebSocket(WS_URL);
     ws.binaryType = 'arraybuffer';
 

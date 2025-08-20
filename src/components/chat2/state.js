@@ -1,7 +1,9 @@
 import { ref } from 'vue'
 
 // API 基础 URL
-export const API_BASE_URL = 'https://chlion.lionchat.online'
+export const API_BASE_URL = 'http://localhost:9922'
+export const API_BASE_URL_WS = 'ws://localhost:9922'
+
 
 // 用户信息全局变量
 export const myName = ref('')

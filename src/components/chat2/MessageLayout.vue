@@ -149,8 +149,33 @@ import { ackManager } from './ackManager.js'
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
 const messages = computed(() => {
-    return chatMessages.value[TOUUID.value] || []
+    const msgs = chatMessages.value[TOUUID.value] || []
+    // 按时间戳排序消息，确保离线消息和实时消息正确排序
+    return msgs.sort((a, b) => a.timestamp - b.timestamp)
 })
+
+// 监听聊天对象变化，自动标记未读消息为已读
+watch(TOUUID, async (newChatId, oldChatId) => {
+    if (newChatId && newChatId !== oldChatId) {
+        await markCurrentChatMessagesAsRead()
+    }
+}, { immediate: false })
+
+// 标记当前聊天对话的未读消息为已读
+async function markCurrentChatMessagesAsRead() {
+    if (!TOUUID.value) return
+    
+    const currentMessages = chatMessages.value[TOUUID.value] || []
+    const unreadMessageIds = currentMessages
+        .filter(msg => !msg.isRead && msg.from !== MYUUID.value) // 只标记别人发送的未读消息
+        .map(msg => msg.messageId)
+        .filter(id => id) // 过滤掉无效的messageId
+    
+    if (unreadMessageIds.length > 0) {
+        await markMessagesAsRead(unreadMessageIds)
+        console.log(`自动标记 ${unreadMessageIds.length} 条消息为已读`)
+    }
+}
 const input = ref('')
 const MessageType = ref(null)
 let ws = null
@@ -342,8 +367,120 @@ function saveUnreadCounts() {
             unreadCounts[group.uuid] = group.unread
         }
     })
-    localStorage.setItem(`unreadCounts_${sessionKey}`, JSON.stringify(unreadCounts))
+    //localStorage.setItem(`unreadCounts_${sessionKey}`, JSON.stringify(unreadCounts))
 }
+
+// 获取离线消息
+async function getOfflineMessages() {
+    try {
+        const token = localStorage.getItem(`${sessionKey}`)
+        if (!token) {
+            console.error('No token found for session:', sessionKey)
+            return
+        }
+        
+        const resp = await fetch(`http://localhost:9922/v1/api/message/getUnreadMessage?page=1&limit=50`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        
+        const data = await resp.json()
+        console.log('离线消息:', data)
+        
+        if (data.code === 200 && data.data && data.data.messages) {
+            const unreadMessageIds = []
+            
+            // 处理离线消息
+            data.data.messages.forEach(message => {
+                const offlineMsg = {
+                    messageId: message.message_id,
+                    from: message.sender_id,
+                    to: message.receive_id,
+                    content: message.content,
+                    contentType: 1, // 假设都是文本消息
+                    fromUsername: '离线消息', // 可以根据需要获取用户名
+                    timestamp: new Date(message.created_at).getTime(),
+                    isRead: message.status === 1
+                }
+                
+                // 确定聊天ID（私聊使用发送者ID）
+                const chatId = message.sender_id
+                
+                // 添加到聊天记录
+                if (!chatMessages.value[chatId]) {
+                    chatMessages.value[chatId] = []
+                }
+                
+                // 检查消息是否已存在（避免重复）
+                const exists = chatMessages.value[chatId].some(msg => 
+                    msg.messageId === offlineMsg.messageId
+                )
+                
+                if (!exists) {
+                    chatMessages.value[chatId].push(offlineMsg)
+                    // 收集未读消息ID
+                    if (!offlineMsg.isRead) {
+                        unreadMessageIds.push(message.message_id)
+                    }
+                }
+            })
+            
+            console.log(`成功加载 ${data.data.messages.length} 条离线消息`)
+            
+            // 自动标记所有未读离线消息为已读
+            // if (unreadMessageIds.length > 0) {
+            //     await markMessagesAsRead(unreadMessageIds)
+            // }
+        }
+    } catch (error) {
+        console.error('获取离线消息失败:', error)
+    }
+}
+
+// 标记消息为已读
+async function markMessagesAsRead(messageIds) {
+    try {
+        const token = localStorage.getItem(`${sessionKey}`)
+        if (!token) {
+            console.error('No token found for session:', sessionKey)
+            return
+        }
+        
+        const resp = await fetch(`http://localhost:9922/v1/api/message/markAsRead`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message_ids: messageIds
+            })
+        })
+        
+        const data = await resp.json()
+        console.log('标记已读响应:', data)
+        
+        if (data.code === 200) {
+            console.log(`成功标记 ${messageIds.length} 条消息为已读`)
+            
+            // 更新本地消息状态
+            Object.keys(chatMessages.value).forEach(chatId => {
+                chatMessages.value[chatId].forEach(msg => {
+                    if (messageIds.includes(msg.messageId)) {
+                        msg.isRead = true
+                    }
+                })
+            })
+        } else {
+            console.error('标记消息已读失败:', data.message)
+        }
+    } catch (error) {
+        console.error('标记消息已读请求失败:', error)
+    }
+}
+
 onMounted(async () => {
     // 加载 proto
     const root = await protobuf.load('/message.proto')
@@ -352,8 +489,17 @@ onMounted(async () => {
     ws = getWebSocket()
     if (ws) {
         wsConnected.value = ws.readyState === WebSocket.OPEN
-        ws.addEventListener('open', () => (wsConnected.value = true))
+        ws.addEventListener('open', async () => {
+            wsConnected.value = true
+            // WebSocket连接成功后获取离线消息
+            await getOfflineMessages()
+        })
         ws.addEventListener('close', () => (wsConnected.value = false))
+    }
+    
+    // 如果WebSocket已经连接，立即获取离线消息
+    if (wsConnected.value) {
+        await getOfflineMessages()
     }
     
     // 初始化ACK管理器
@@ -772,9 +918,7 @@ function sendMessage() {
     chatMessages.value[TOUUID.value].push({ ...msgObj, timestamp: Date.now() })
     input.value = ''
 }
-function showNotImpl(type) {
-    alert(type + '功能暂未实现')
-}
+
 function toggleEmojiPanel() {
     showEmojiPanel.value = !showEmojiPanel.value
     if (showEmojiPanel.value) {
@@ -854,7 +998,15 @@ function registerMessageElement(msg, el) {
 
 // 检查消息是否已读
 function isMessageRead(messageId) {
-    return readMessageIds.value.has(messageId)
+    // 首先检查readMessageIds Set
+    if (readMessageIds.value.has(messageId)) {
+        return true
+    }
+    
+    // 然后检查消息对象本身的isRead属性
+    const currentMessages = chatMessages.value[TOUUID.value] || []
+    const message = currentMessages.find(msg => msg.messageId === messageId)
+    return message ? message.isRead : false
 }
 
 // 处理ACK确认消息
