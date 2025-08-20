@@ -592,10 +592,8 @@ function cancelFriendMessage() {
 // 确认添加好友并发送请求
 async function confirmAddFriend() {
     if (!selectedFriendToAdd.value) return
-    
     const f = selectedFriendToAdd.value
     const message = friendMessage.value.trim() || '你好，我想和你成为好友！'
-    
     try {
         const resp = await fetch(`${API_BASE_URL}/v1/api/friend/friends`, {
             method: 'POST',

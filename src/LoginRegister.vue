@@ -160,7 +160,7 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
   // 多语言文本配置
   const translations = {
     zh: {
-      welcomeBack: '欢迎回来',
+      welcomeBack: '欢迎回来🦁',
       signIn: '登录',
       signUp: '注册',
       email: '邮箱',
@@ -182,7 +182,7 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
       networkError: '网络错误'
     },
     en: {
-      welcomeBack: 'Welcome Back',
+      welcomeBack: 'Welcome Back🦁',
       signIn: 'Sign in',
       signUp: 'Sign up',
       email: 'Email',
@@ -221,7 +221,6 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
     loading.value = true
     try {
       const resp = await fetch(`${API_BASE_URL}/v1/api/user/login`, {
-
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account: email.value, password: password.value })
@@ -232,7 +231,6 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
       if (data.code === 2002) {
         const sessionKey = getSessionKey(); // 获取session key
         localStorage.setItem(`${sessionKey}`, data.access_token)
-        // localStorage.setItem(`userinfo_${sessionKey}`, JSON.stringify(data.data.userinfo))
         router.push({ path: '/chat', query: { session: sessionKey } }) 
       } else {
         errorMsg.value = data.code || texts.value.loginFailed
@@ -249,14 +247,11 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
     loading.value = true
     try {
       const resp = await fetch(`${API_BASE_URL}/v1/api/user/register`, {
-
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.value, username: username.value, password: password.value, nickname: nickname.value })
       })
       const data = await resp.json()
-      console.log(data)
-
       if (data.code === 2000) {
         tab.value = 'login'
         errorMsg.value = texts.value.registerSuccess
@@ -394,8 +389,8 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
   }
 
   .welcome-message {
-    font-size: 16px;
-    color: var(--text-secondary, #a1a1aa);
+    font-size: 40px;
+    color: var(--text-secondary, #ffffff);
     text-align: center;
     margin-bottom: 20px;
     font-weight: 400;
@@ -418,7 +413,7 @@ import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
 
   .language-toggle {
     background: var(--bg-secondary, rgba(255, 255, 255, 0.1));
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    /* border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2)); */
     color: var(--text-primary, #ffffff);
     padding: 8px 16px;
     border-radius: 8px;
