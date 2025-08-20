@@ -5,9 +5,9 @@ export const API_BASE_URL = 'https://chlion.lionchat.online'
 
 // 用户信息全局变量
 export const myName = ref('')
-export const myUuid = ref('')
+export const MYUUID = ref('')
 
-export const toUuid = ref('')
+export const TOUUID = ref('')
 // 好友列表，头像类型随机
 export const friends = ref([])
 // 群聊列表，头像类型随机

@@ -19,7 +19,7 @@
                 </svg>
             </div>
             <div class="my-name">{{ myName }}</div>
-            <div class="my-uuid">{{ myUuid }}</div>
+            <div class="my-uuid">{{ MYUUID }}</div>
         </div>
         <div class="nav-list">
             <div class="nav-item" :class="{ active: navTab === 'friend' }" @click="handleNavClick('friend')">
@@ -65,7 +65,7 @@
             </div>
 
             <div v-for="friend in friends" :key="friend.uuid" class="friend-item"
-                :class="{ active: friend.uuid === toUuid }" @click="selectFriend(friend)">
+                :class="{ active: friend.uuid === TOUUID }" @click="selectFriend(friend)">
                 <div class="friend-avatar">
                     <span v-if="friend.avatarType === 'emoji'" class="avatar-emoji">{{ friend.avatar || '😀'}}</span>
                     <span v-else-if="friend.avatarType === 'svg'" v-html="friend.avatar"></span>
@@ -136,7 +136,7 @@
                 <button class="add-group-confirm" @click="joinGroup" :disabled="joiningGroup">加入</button>
                 <button class="add-group-cancel" @click="cancelAddGroup">取消</button>
             </div>
-            <div v-for="group in groups" :key="group.uuid" class="group-item" :class="{ active: group.uuid === toUuid }"
+            <div v-for="group in groups" :key="group.uuid" class="group-item" :class="{ active: group.uuid === TOUUID }"
                 @click="selectGroup(group)">
                 <div class="group-avatar">
                     <span v-if="group.avatarType === 'emoji'" class="avatar-emoji">{{ group.avatar }}</span>
@@ -447,7 +447,7 @@
 <script setup>
 import { ref, onMounted} from 'vue'
 import { useRoute } from 'vue-router'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, myUuid, API_BASE_URL } from './state.js'
+import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, MYUUID } from './state.js'
 import Toast from '../Toast.vue'
 
 
@@ -738,7 +738,7 @@ function cancelAddGroup() {
 }
 // 选择一个朋友
 function selectFriend(friend) {
-    toUuid.value = friend.uuid
+    TOUUID.value = friend.uuid
     currentChatType.value = 1
     currentChatID.value = friend.uuid
     friend.unread = 0
@@ -750,7 +750,7 @@ function selectFriend(friend) {
 // 选择一个群组
 function selectGroup(group) {
     console.log(group)
-    toUuid.value = group.uuid
+    TOUUID.value = group.uuid
     currentChatType.value = 2
     currentChatID.value = group.uuid
     group.unread = 0
@@ -838,7 +838,7 @@ async function getMyInfo() {
         });
 
         const data = await resp.json();
-        console.log(data.user_info.nickname)
+        console.log(data.user_info)
         if (data.code == 4444) {
             showToastMessage(data.msg, 'info')
             return
@@ -846,8 +846,7 @@ async function getMyInfo() {
         // 赋值给userinfo
         userinfo.value = data.user_info
         myName.value = data.user_info.nickname
-        myUuid.value = data.user_info.uuid
-        
+        MYUUID.value = data.user_info.uuid
         // 更新个人信息表单的初始值
         profileForm.value = {
             nickname: data.user_info.nickname || '',
@@ -860,7 +859,6 @@ async function getMyInfo() {
 }
 // 获取群组列表
 async function getGroupList() {
-    console.log("group list:")
     try {
         const resp = await fetch(`${API_BASE_URL}/v1/api/group/group-list`, {
             method: 'GET',
@@ -896,11 +894,9 @@ async function updateProfile() {
         showToastMessage('昵称不能为空', 'warning')
         return
     }
-
     updatingProfile.value = true
     try {
-        const resp = await fetch(`${API_BASE_URL}/v1/api/profile/updateProfile`, {
-
+        const resp = await fetch('http://localhost:9922/v1/api/profile/updateProfile', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
