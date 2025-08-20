@@ -67,7 +67,7 @@
             <div v-for="friend in friends" :key="friend.uuid" class="friend-item"
                 :class="{ active: friend.uuid === TOUUID }" @click="selectFriend(friend)">
                 <div class="friend-avatar">
-                    <span v-if="friend.avatarType === 'emoji'" class="avatar-emoji">{{ friend.avatar || '😀'}}</span>
+                    <span v-if="friend.avatarType === 'emoji'" class="avatar-emoji">{{ friend.avatar || '😀' }}</span>
                     <span v-else-if="friend.avatarType === 'svg'" v-html="friend.avatar"></span>
                 </div>
                 <div class="friend-info">
@@ -76,7 +76,7 @@
                 </div>
                 <div v-if="friend.unread > 0" class="unread-bubble">{{ friend.unread }}</div>
             </div>
-            
+
             <!-- 好友列表为空时的提示 -->
             <div v-if="friends.length === 0 && !showAddFriend" class="empty-state">
                 <div class="empty-icon">👥</div>
@@ -116,16 +116,13 @@
                     </div>
                     <div class="form-group">
                         <label>群组描述：</label>
-                        <textarea 
-                            v-model="createGroupDescription" 
-                            placeholder="请输入群组描述（最多200字）" 
-                            class="create-group-textarea"
-                            maxlength="200"
-                        ></textarea>
+                        <textarea v-model="createGroupDescription" placeholder="请输入群组描述（最多200字）"
+                            class="create-group-textarea" maxlength="200"></textarea>
                         <div class="char-count">{{ createGroupDescription.length }}/200</div>
                     </div>
                     <div class="form-actions">
-                        <button class="create-group-confirm" @click="createGroup" :disabled="creatingGroup || !createGroupName.trim() || !createGroupType">创建</button>
+                        <button class="create-group-confirm" @click="createGroup"
+                            :disabled="creatingGroup || !createGroupName.trim() || !createGroupType">创建</button>
                         <button class="create-group-cancel" @click="cancelCreateGroup">取消</button>
                     </div>
                 </div>
@@ -148,7 +145,7 @@
                 </div>
                 <div v-if="group.unread > 0" class="group_unread-bubble">{{ group.unread }}</div>
             </div>
-            
+
             <!-- 群组列表为空时的提示 -->
             <div v-if="groups.length === 0 && !showCreateGroup && !showAddGroup" class="empty-state">
                 <div class="empty-icon">💬</div>
@@ -170,7 +167,8 @@
                     @keyup.ctrl.enter="publishMoment" maxlength="200"></textarea>
                 <div class="moment-actions">
                     <span class="char-count">{{ newMomentContent.length }}/200</span>
-                    <button class="publish-moment-btn" @click="publishMoment" :disabled="!newMomentContent.trim() || publishingMoment">发布</button>
+                    <button class="publish-moment-btn" @click="publishMoment"
+                        :disabled="!newMomentContent.trim() || publishingMoment">发布</button>
                     <button class="cancel-moment-btn" @click="cancelAddMoment">取消</button>
                 </div>
             </div>
@@ -184,8 +182,9 @@
                                 </mask>
                                 <g mask="url(#moment-avatar)">
                                     <rect width="36" height="36" fill="#49007e"></rect>
-                                    <rect x="0" y="0" width="36" height="36" transform="translate(7 1) rotate(53 18 18) scale(1.2)"
-                                        fill="#ff7d10" rx="6"></rect>
+                                    <rect x="0" y="0" width="36" height="36"
+                                        transform="translate(7 1) rotate(53 18 18) scale(1.2)" fill="#ff7d10" rx="6">
+                                    </rect>
                                 </g>
                             </svg>
                         </div>
@@ -197,13 +196,17 @@
                     <div class="moment-content">{{ moment.content }}</div>
                     <div class="moment-actions">
                         <button class="moment-action-btn" @click="likeMoment(moment)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                                </path>
                             </svg>
                             <span>{{ moment.likes || 0 }}</span>
                         </button>
                         <button class="moment-action-btn" @click="toggleComments(moment)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
                             <span>{{ moment.comments?.length || 0 }}</span>
@@ -212,20 +215,12 @@
                     <!-- 评论区域 -->
                     <div v-if="moment.showComments" class="moment-comments">
                         <div class="comment-input-area">
-                            <textarea 
-                                v-model="moment.newComment" 
-                                placeholder="写下你的评论..." 
-                                class="comment-input"
-                                @keyup.ctrl.enter="submitComment(moment)"
-                                maxlength="500"
-                            ></textarea>
+                            <textarea v-model="moment.newComment" placeholder="写下你的评论..." class="comment-input"
+                                @keyup.ctrl.enter="submitComment(moment)" maxlength="500"></textarea>
                             <div class="comment-actions">
                                 <span class="comment-char-count">{{ (moment.newComment || '').length }}/500</span>
-                                <button 
-                                    class="submit-comment-btn" 
-                                    @click="submitComment(moment)" 
-                                    :disabled="!moment.newComment?.trim() || submittingComment"
-                                >
+                                <button class="submit-comment-btn" @click="submitComment(moment)"
+                                    :disabled="!moment.newComment?.trim() || submittingComment">
                                     发布评论
                                 </button>
                             </div>
@@ -235,12 +230,14 @@
                                 <div class="comment-header">
                                     <div class="comment-avatar">
                                         <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="" width="24" height="24">
-                                            <mask id="comment-avatar" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+                                            <mask id="comment-avatar" maskUnits="userSpaceOnUse" x="0" y="0" width="36"
+                                                height="36">
                                                 <rect width="36" height="36" rx="72" fill="#FFFFFF"></rect>
                                             </mask>
                                             <g mask="url(#comment-avatar)">
                                                 <rect width="36" height="36" fill="#49007e"></rect>
-                                                <rect x="0" y="0" width="36" height="36" transform="translate(7 1) rotate(53 18 18) scale(1.2)"
+                                                <rect x="0" y="0" width="36" height="36"
+                                                    transform="translate(7 1) rotate(53 18 18) scale(1.2)"
                                                     fill="#ff7d10" rx="6"></rect>
                                             </g>
                                         </svg>
@@ -285,31 +282,27 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 添加好友留言输入对话框 -->
         <div v-if="showFriendMessageDialog" class="friend-message-overlay">
             <div class="friend-message-dialog">
                 <h3>添加好友</h3>
                 <div class="friend-info-preview">
                     <div class="friend-avatar-preview">
-                        <span v-if="selectedFriendToAdd?.avatar && selectedFriendToAdd.avatar.startsWith('<svg')" v-html="selectedFriendToAdd.avatar"></span>
+                        <span v-if="selectedFriendToAdd?.avatar && selectedFriendToAdd.avatar.startsWith('<svg')"
+                            v-html="selectedFriendToAdd.avatar"></span>
                         <span v-else>{{ selectedFriendToAdd?.avatar || '😀' }}</span>
                     </div>
                     <div class="friend-details">
-                        <div class="friend-name-preview">{{ selectedFriendToAdd?.nickname || selectedFriendToAdd?.username }}</div>
+                        <div class="friend-name-preview">{{ selectedFriendToAdd?.nickname ||
+                            selectedFriendToAdd?.username }}</div>
                         <div class="friend-email-preview">{{ selectedFriendToAdd?.email }}</div>
                     </div>
                 </div>
                 <div class="message-input-group">
                     <label for="friendMessage">留言：</label>
-                    <textarea 
-                        id="friendMessage"
-                        v-model="friendMessage" 
-                        placeholder="请输入好友请求留言（可选）" 
-                        class="message-textarea"
-                        rows="3"
-                        maxlength="200"
-                    ></textarea>
+                    <textarea id="friendMessage" v-model="friendMessage" placeholder="请输入好友请求留言（可选）"
+                        class="message-textarea" rows="3" maxlength="200"></textarea>
                     <div class="message-counter">{{ friendMessage.length }}/200</div>
                 </div>
                 <div class="message-buttons">
@@ -318,7 +311,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div v-if="showSettings" class="settings-overlay">
             <div class="settings-dialog">
                 <div class="settings-header">
@@ -389,21 +382,24 @@
                         <div class="theme-section">
                             <h4>外观模式</h4>
                             <div class="theme-options">
-                                <div class="theme-option" :class="{ active: currentTheme === 'light' }" @click="setTheme('light')">
+                                <div class="theme-option" :class="{ active: currentTheme === 'light' }"
+                                    @click="setTheme('light')">
                                     <div class="theme-preview light-preview">
                                         <div class="preview-header"></div>
                                         <div class="preview-content"></div>
                                     </div>
                                     <span>浅色模式</span>
                                 </div>
-                                <div class="theme-option" :class="{ active: currentTheme === 'dark' }" @click="setTheme('dark')">
+                                <div class="theme-option" :class="{ active: currentTheme === 'dark' }"
+                                    @click="setTheme('dark')">
                                     <div class="theme-preview dark-preview">
                                         <div class="preview-header"></div>
                                         <div class="preview-content"></div>
                                     </div>
                                     <span>深色模式</span>
                                 </div>
-                                <div class="theme-option" :class="{ active: currentTheme === 'eye-care' }" @click="setTheme('eye-care')">
+                                <div class="theme-option" :class="{ active: currentTheme === 'eye-care' }"
+                                    @click="setTheme('eye-care')">
                                     <div class="theme-preview eye-care-preview">
                                         <div class="preview-header"></div>
                                         <div class="preview-content"></div>
@@ -412,7 +408,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="theme-section">
                             <h4>个性化设置</h4>
                             <div class="form-group">
@@ -434,20 +430,16 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Toast 提示框 -->
-    <Toast 
-        :message="toastMessage" 
-        :type="toastType" 
-        :show="showToast" 
-        @close="showToast = false" 
-    />
+    <Toast :message="toastMessage" :type="toastType" :show="showToast" @close="showToast = false" />
 </template>
 
 <script setup>
-import { ref, onMounted} from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, MYUUID } from './state.js'
+import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, MYUUID, API_BASE_URL } from './state.js'
+
 import Toast from '../Toast.vue'
 
 
@@ -488,7 +480,7 @@ const showSettings = ref(false)
 const settingsTab = ref('profile') // 'profile'、'password' 或 'theme'
 
 // 主题相关
-const currentTheme = ref(localStorage.getItem('chat-theme') || 'light')
+const currentTheme = ref(localStorage.getItem('chat-theme') || 'dark')
 const autoTheme = ref(localStorage.getItem('chat-auto-theme') === 'true')
 const eyeCareMode = ref(localStorage.getItem('chat-eye-care') === 'true')
 const updatingProfile = ref(false)
@@ -513,11 +505,11 @@ const moments = ref([])
 const submittingComment = ref(false)
 // const currentChatID = ref(0)
 onMounted(async () => {
-   await getFriendList()
-   await getGroupList()
-   await getMyInfo()
+    await getFriendList()
+    await getGroupList()
+    await getMyInfo()
 
-    
+
     // 初始化主题设置
     applyTheme(currentTheme.value)
     applyEyeCareMode()
@@ -529,7 +521,7 @@ function showToastMessage(message, type = 'info', duration = 3000) {
     toastMessage.value = message
     toastType.value = type
     showToast.value = true
-    
+
     // 自动隐藏
     setTimeout(() => {
         showToast.value = false
@@ -613,18 +605,18 @@ async function confirmAddFriend() {
             throw new Error(data.msg || '好友已存在');
         }
         showToastMessage('好友请求已发送', 'success');
-        
+
         // 关闭对话框并清理状态
         showFriendMessageDialog.value = false
         selectedFriendToAdd.value = null
         friendMessage.value = ''
-        
+
         // 清理搜索状态
         showAddFriend.value = false;
         newFriendName.value = '';
         searchResults.value = [];
         searchError.value = '';
-        
+
     } catch (e) {
         showToastMessage('添加失败: ' + e.message, 'error');
     }
@@ -650,7 +642,7 @@ async function createGroup() {
     }
     creatingGroup.value = true
     try {
-        const resp = await fetch(`${API_BASE_URL}/v1/api/group/createGroup`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/group`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -664,14 +656,14 @@ async function createGroup() {
         })
         if (!resp.ok) throw new Error('网络错误')
         const data = await resp.json()
-        if (data.code !== 0) throw new Error(data.msg || '创建失败')
         console.log(data)
+        if (data.code !== 0) throw new Error(data.msg || '创建失败')
 
         //uuid: item.group_uuid,
         //name: item.group_name,
         groups.value.push({
-            uuid: data.data.group_id,
-            name: data.data.group_name,
+            uuid: data.group_info.group_uuid,
+            name: data.group_info.group_name,
             type: type,
             description: description,
             unread: 0
@@ -695,7 +687,7 @@ async function joinGroup() {
 
     joiningGroup.value = true
     try {
-        const resp = await fetch(`${API_BASE_URL}/v1/api/group/joinGroup`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/group/group-memberships`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -809,19 +801,17 @@ async function getFriendList() {
         });
 
         const data = await resp.json();
-        console.log(data)
         if (data.code == 4444) {
             showToastMessage(data.msg, 'info')
             return
         }
-
         // 从localStorage获取未读消息计数
         const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
         friends.value = data.data.map(item => ({
             name: item.nickname,
             email: item.email,
-            uuid : item.uuid,
-            unread: savedUnreadCounts[item.friend_uuid] || 0
+            uuid: item.uuid,
+            unread: savedUnreadCounts[item.uuid] || 0
         }))
     } catch (e) {
         // alert(e.message);
@@ -838,7 +828,6 @@ async function getMyInfo() {
         });
 
         const data = await resp.json();
-        console.log(data.user_info)
         if (data.code == 4444) {
             showToastMessage(data.msg, 'info')
             return
@@ -867,22 +856,27 @@ async function getGroupList() {
             }
         });
         const data = await resp.json();
-        console.log("group list:", data.msg)
         if (data.code == 1122) {
             showToastMessage(data.msg, 'info')
             return
-        }else if (data.code == 0) {
+        } else if (data.code == 0) {
             showToastMessage(data.msg, 'success')
-            return
+            // 从localStorage获取未读消息计数
+            const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
+            // 处理返回的数据结构
+            if (data.data && Array.isArray(data.data)) {
+                groups.value = data.data.map(item => ({
+                    uuid: item.group_uuid,
+                    name: item.group_name,
+                    unread: savedUnreadCounts[item.group_uuid] || 0
+                }))
+            } else {
+                // 如果data.data不是数组，尝试处理其他可能的数据结构
+                console.warn('Unexpected group list data structure:', data)
+                groups.value = []
+            }
         }
 
-        // 从localStorage获取未读消息计数
-        const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
-        groups.value = data.data.map(item => ({
-            uuid: item.group_uuid,
-            name: item.group_name,
-            unread: savedUnreadCounts[item.group_uuid] || 0
-        }))
     } catch (e) {
         // alert(e.message);
     }
@@ -896,7 +890,7 @@ async function updateProfile() {
     }
     updatingProfile.value = true
     try {
-        const resp = await fetch('http://localhost:9922/v1/api/profile/updateProfile', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/profile/profileInfo`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1051,7 +1045,7 @@ async function publishMoment() {
     publishingMoment.value = true
     try {
         // 这里可以添加实际的API调用
-        const resp = await fetch(`${API_BASE_URL}/v1/api/moment/createMoment`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/moment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1161,7 +1155,7 @@ async function likeMoment(moment) {
         const data = await resp.json()
         if (data.code === 0) {
             showToastMessage('点赞成功', 'success')
-             if (!moment.likes) {
+            if (!moment.likes) {
                 moment.likes = 0
             }
             moment.likes++
@@ -1196,9 +1190,9 @@ async function submitComment(moment) {
     submittingComment.value = true
     try {
         const momentId = parseInt(moment['moment_id'] || moment.id)
-        
+
         // 调用后端API提交评论
-        const resp = await fetch('http://localhost/v1/api/comment/create', {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/comment/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1209,7 +1203,7 @@ async function submitComment(moment) {
                 content: content
             })
         })
-        
+
         const data = await resp.json()
         if (data.code === 0) {
             // 创建新评论对象
@@ -1258,6 +1252,7 @@ async function getCommentList(moment) {
     } catch (e) {
         showToastMessage('获取评论列表失败: ' + e.message, 'error')
         // 如果获取失败，初始化为空数组
+        // an't access property "group_id", l.data is undefine
         moment.comments = []
     }
 }
@@ -1727,12 +1722,16 @@ async function getCommentList(moment) {
 }
 
 @keyframes blink {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateX(0);
     }
+
     25% {
         transform: translateX(-3px);
     }
+
     75% {
         transform: translateX(3px);
     }
@@ -1800,6 +1799,7 @@ async function getCommentList(moment) {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -2271,7 +2271,7 @@ async function getCommentList(moment) {
 }
 
 .add-moment-btn {
-     
+
     /* color: var(--text-primary, #fff);
     border: none;
     border-radius: 4px;
@@ -2848,6 +2848,7 @@ async function getCommentList(moment) {
         transform: scale(0.9);
         opacity: 0;
     }
+
     to {
         transform: scale(1);
         opacity: 1;

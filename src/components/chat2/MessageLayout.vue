@@ -69,8 +69,7 @@
                     title="语音消息">
                     {{ isRecording ? '⏹' : '🎤' }}
                 </button>
-
-                <button class="input-action-btn" @click="showNotImpl('视频')" title="发送视频">🎥</button>
+                <!-- <button class="input-action-btn" @click="showNotImpl('视频')" title="发送视频">🎥</button> -->
             </div>
             <div v-if="showEmojiPanel" class="emoji-panel" ref="emojiPanelRef">
                 <span v-for="emoji in emojiList" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">{{ emoji
@@ -121,6 +120,15 @@
             @call-started="onVideoCallStarted"
             @call-ended="onVideoCallEnded"
         />
+        
+        <!-- 语音消息播放器 -->
+        <VoiceMessagePlayer
+            :show-player="showVoicePlayer"
+            :audio-url="currentVoiceUrl"
+            :sender-name="currentVoiceSender"
+            :voice-duration="currentVoiceDuration"
+            @close="closeVoicePlayer"
+        />
     </div>
 </template>
 
@@ -135,6 +143,7 @@ import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friend
 
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
+// import VoiceMessagePlayer from './VoiceMessagePlayer.vue'
 import { ackManager } from './ackManager.js'
 
 const route = useRoute()
@@ -169,6 +178,11 @@ const previewVideoUrl = ref('')
 const voiceCallRef = ref(null)
 // WebRTC视频通话
 const videoCallRef = ref(null)
+// 语音消息播放器
+const showVoicePlayer = ref(false)
+const currentVoiceUrl = ref('')
+const currentVoiceSender = ref('')
+const currentVoiceDuration = ref(0)
 // ACK相关
 const messagesContainer = ref(null)
 const readMessageIds = ref(new Set()) // 已读消息ID集合
@@ -404,10 +418,8 @@ function handleWebSocketMessage(event) {
                 handleAckMessage(decoded);
                 break;
             default:
-                console.log("未知消息类型")
                 break;
-        }
-        
+        } 
         saveUnreadCounts();
     } catch (e) {
          console.log("未知消息类型")
@@ -808,6 +820,21 @@ function previewVideo(url) {
 function closeVideoPreview() {
     showVideoPreview.value = false
     previewVideoUrl.value = ''
+}
+
+// 语音消息播放函数
+function playVoiceMessage(msg) {
+    currentVoiceUrl.value = msg.url
+    currentVoiceSender.value = msg.fromUsername
+    currentVoiceDuration.value = msg.duration || 0
+    showVoicePlayer.value = true
+}
+
+function closeVoicePlayer() {
+    showVoicePlayer.value = false
+    currentVoiceUrl.value = ''
+    currentVoiceSender.value = ''
+    currentVoiceDuration.value = 0
 }
 
 // ACK相关方法

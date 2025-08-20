@@ -12,12 +12,13 @@ import { ref, onMounted } from 'vue'
 import LeftLayout from '@/components/chat2/LeftLayout.vue'
 import MessageLayout from '@/components/chat2/MessageLayout.vue'
 
-const currentTheme = ref(localStorage.getItem('chat-theme') || 'light')
+const currentTheme = ref(localStorage.getItem('chat-theme') || 'dark')
+
 
 onMounted(() => {
   // 监听主题变化
   const observer = new MutationObserver(() => {
-    const theme = document.documentElement.getAttribute('data-theme') || 'light'
+    const theme = document.documentElement.getAttribute('data-theme') || 'dark'
     currentTheme.value = theme
   })
   

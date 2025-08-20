@@ -120,7 +120,7 @@
   <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { myName, myUuid, API_BASE_URL } from './components/chat2/state.js'
+import { API_BASE_URL } from './components/chat2/state.js'
   
   const tab = ref('login')
   const email = ref('') // 邮箱 必填
