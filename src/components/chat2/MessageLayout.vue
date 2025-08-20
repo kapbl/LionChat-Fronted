@@ -15,7 +15,7 @@
         <div class="messages" ref="messagesContainer">
             <div v-for="(msg, idx) in messages" 
                  :key="msg.messageId || idx" 
-                 :class="['message', msg.from === myUuid ? 'self' : 'other']"
+                 :class="['message', msg.from === MYUUID ? 'self' : 'other']"
                  :ref="el => registerMessageElement(msg, el)">
                 <div class="msg-bubble">
                     <span class="sender">{{ msg.fromUsername }}：</span>
@@ -38,7 +38,7 @@
                     <div class="message-footer">
                         <span class="timestamp">{{ formatTime(msg.timestamp) }}</span>
                         <!-- 显示消息已读状态 -->
-                        <span v-if="msg.from === myUuid && msg.messageId" class="read-status">
+                        <span v-if="msg.from === MYUUID && msg.messageId" class="read-status">
                             <span v-if="isMessageRead(msg.messageId)" class="read-indicator">✓✓</span>
                             <span v-else class="unread-indicator">✓</span>
                         </span>
@@ -104,7 +104,7 @@
         <WebRTCVoiceCall
             v-if="MessageType"
             ref="voiceCallRef"
-            :my-uuid="myUuid"
+            :my-uuid="MYUUID"
             :my-name="myName"
             :message-type="MessageType"
             @call-started="onVoiceCallStarted"
@@ -115,7 +115,7 @@
         <WebRTCVideoCall
             v-if="MessageType"
             ref="videoCallRef"
-            :my-uuid="myUuid"
+            :my-uuid="MYUUID"
             :my-name="myName"
             :message-type="MessageType"
             @call-started="onVideoCallStarted"
@@ -131,7 +131,7 @@ import { useRoute } from 'vue-router'
 import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { toUuid, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, myUuid } from './state.js'
+import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID } from './state.js'
 
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
@@ -140,11 +140,9 @@ import { ackManager } from './ackManager.js'
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
 const messages = computed(() => {
-    console.log('messages computed - toUuid.value:', toUuid.value, 'chatMessages.value:', chatMessages.value)
-    return chatMessages.value[toUuid.value] || []
+    return chatMessages.value[TOUUID.value] || []
 })
 const input = ref('')
-const userinfo = JSON.parse(localStorage.getItem(`userinfo_${sessionKey}`) || '{}')
 const MessageType = ref(null)
 let ws = null
 const wsConnected = ref(false)
@@ -215,8 +213,8 @@ function sendFileMessage(fileData) {
     const msgObj = {
         avatar: '',
         fromUsername: myName.value,
-        from: myUuid.value,
-        to: toUuid.value,
+        from: MYUUID.value,
+        to: TOUUID.value,
         content: fileData.fileName,
         contentType: contentType,
         type: type,
@@ -237,8 +235,8 @@ function sendFileMessage(fileData) {
     }
     const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
-    if (!chatMessages.value[toUuid.value]) chatMessages.value[toUuid.value] = []
-    chatMessages.value[toUuid.value].push({
+    if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
+    chatMessages.value[TOUUID.value].push({
         ...msgObj,
         timestamp: Date.now()
     })
@@ -280,8 +278,8 @@ function sendVoiceMessage(voiceData) {
         ...voiceData,
         avatar: '',
         fromUsername: myName.value,
-        from: myUuid.value,
-        to: toUuid.value,
+        from: MYUUID.value,
+        to: TOUUID.value,
         content: '语音消息',
         contentType: 4,
         type: 'audio',
@@ -302,8 +300,8 @@ function sendVoiceMessage(voiceData) {
     const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
 
-    if (!chatMessages.value[toUuid.value]) chatMessages.value[toUuid.value] = []
-    chatMessages.value[toUuid.value].push({
+    if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
+    chatMessages.value[TOUUID.value].push({
         ...msgObj,
         timestamp: Date.now()
     })
@@ -332,22 +330,11 @@ function saveUnreadCounts() {
     })
     localStorage.setItem(`unreadCounts_${sessionKey}`, JSON.stringify(unreadCounts))
 }
-// WebSocket 长轮询
 onMounted(async () => {
-    // 初始化全局用户信息
-    if (!myName.value) {
-        myName.value = userinfo.nickname || '我'
-    }
-    if (!myUuid.value) {
-        myUuid.value = userinfo.uuid
-    }
-    
     // 加载 proto
     const root = await protobuf.load('/message.proto')
     MessageType.value = root.lookup('protocol.Message')
-    // console.log('Loaded MessageType:', MessageType.value)
-    initWebSocket(sessionKey, handleWebSocketMessage, myUuid.value, MessageType.value)
-
+    initWebSocket(sessionKey, handleWebSocketMessage, MYUUID.value, MessageType.value)
     ws = getWebSocket()
     if (ws) {
         wsConnected.value = ws.readyState === WebSocket.OPEN
@@ -356,7 +343,7 @@ onMounted(async () => {
     }
     
     // 初始化ACK管理器
-    ackManager.init(myUuid.value, MessageType.value)
+    ackManager.init(MYUUID.value, MessageType.value)
     
     // 监听消息已读确认事件
     window.addEventListener('messagesAcked', handleMessagesAcked)
@@ -381,12 +368,9 @@ function handleWebSocketMessage(event) {
         // 使用重组后的完整消息
         decoded = completeMessage;
     }
-    
-    const { from, to, file } = decoded;
-    console.log('WebSocket message - from:', from, 'to:', to, 'myUuid.value:', myUuid.value, 'decoded:', decoded);
-    const isPrivateMessage = to === myUuid.value;
+    const { from, to } = decoded;
+    const isPrivateMessage = to === MYUUID.value;
     const chatId = isPrivateMessage ? from : to;
-    console.log('Calculated chatId:', chatId, 'isPrivateMessage:', isPrivateMessage);
     try {
         switch (decoded.contentType) {
             case 1: // 文本消息
@@ -486,7 +470,6 @@ function reassembleMessage(fragments) {
     try {
         const originalMessage = MessageType.value.decode(serializedData);
         originalMessage.isFragmented = false;
-        console.log(originalMessage)
         return originalMessage;
     } catch (error) {
         console.error('反序列化失败:', error);
@@ -496,23 +479,20 @@ function reassembleMessage(fragments) {
 
 // 重构后的消息处理函数
 function handleTextMessage(decoded, chatId, isPrivateMessage) {
-    //updateUnreadCount(chatId, isPrivateMessage);
+    updateUnreadCount(chatId, isPrivateMessage);
     addMessageToChat(chatId, decoded);
 }
 
 function handleFileMessage(decoded, chatId, isPrivateMessage) {
-    console.log("type: ",decoded.fileSuffix)
     // 创建文件URL
     decoded.url = URL.createObjectURL(
         new Blob([decoded.file], { type: getMimeType(decoded.fileSuffix) })
     );
-    console.log(decoded)
     updateUnreadCount(chatId, isPrivateMessage);
     addMessageToChat(chatId, decoded);
 }
 
 function handleImageMessage(decoded, chatId, isPrivateMessage) {
-    console.log("图片消息: ", decoded.fileSuffix)
     // 创建图片URL
     decoded.url = URL.createObjectURL(
         new Blob([decoded.file], { type: getMimeType(decoded.fileSuffix) })
@@ -546,6 +526,7 @@ function handleFriendRequest(decoded) {
     };
     showFriendRequest.value = true;
 }
+
 //处理回复加好友请求
 function handleFriendResponse(decoded) {
     friendResponseInfo.value = {
@@ -572,25 +553,25 @@ function handleWebRTCVideoSignaling(decoded) {
 
 // 发起语音通话
 function startVoiceCall() {
-    if (!toUuid.value || !currentChatName.value) {
+    if (!TOUUID.value || !currentChatName.value) {
         alert('请先选择聊天对象');
         return;
     }
     
     if (voiceCallRef.value) {
-        voiceCallRef.value.startCall(toUuid.value, currentChatName.value);
+        voiceCallRef.value.startCall(TOUUID.value, currentChatName.value);
     }
 }
 
 // 发起视频通话
 function startVideoCall() {
-    if (!toUuid.value || !currentChatName.value) {
+    if (!TOUUID.value || !currentChatName.value) {
         alert('请先选择聊天对象');
         return;
     }
     
     if (videoCallRef.value) {
-        videoCallRef.value.startCall(toUuid.value, currentChatName.value);
+        videoCallRef.value.startCall(TOUUID.value, currentChatName.value);
     }
 }
 
@@ -628,7 +609,6 @@ function updateUnreadCount(chatId, isPrivateMessage) {
 
 function addMessageToChat(chatId, decoded) {
     chatMessages.value[chatId] ??= [];
-    console.log('addMessageToChat - chatId:', chatId)
     // 为消息生成唯一ID（如果没有的话）
     if (!decoded.messageId) {
         decoded.messageId = generateMessageId()
@@ -637,7 +617,6 @@ function addMessageToChat(chatId, decoded) {
         ...decoded,
         timestamp: decoded.timestamp || Date.now()
     });
-    console.log('chatMessages after push:', chatMessages.value)
 }
 
 function getMimeType(fileSuffix) {
@@ -694,11 +673,12 @@ onBeforeUnmount(() => {
     // 移除事件监听
     window.removeEventListener('messagesAcked', handleMessagesAcked)
 })
+
 function formatTime(ts) {
     const date = new Date(ts)
     return date.toLocaleTimeString()
 }
-// 发送消息
+
 // 处理输入变化，显示打字指示器
 function handleInputChange() {
     if (!input.value.trim()) {
@@ -741,7 +721,7 @@ function sendMessage() {
     // 发送消息时隐藏打字指示器
     hideTypingIndicator()
     if (!input.value.trim() || !MessageType.value || !wsConnected.value) return
-    if (!toUuid.value.trim()) {
+    if (!TOUUID.value.trim()) {
         alert('请先选择聊天对象')
         return
     }
@@ -749,8 +729,8 @@ function sendMessage() {
     const msgObj = {
         avatar: '',
         fromUsername: myName.value,
-        from: myUuid.value,
-        to: toUuid.value,
+        from: MYUUID.value,
+        to: TOUUID.value,
         content: input.value,
         contentType: 1, // 文字
         type: '',
@@ -776,8 +756,8 @@ function sendMessage() {
     const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
     ws.send(messageBuffer)
     // 本地也显示消息
-    if (!chatMessages.value[toUuid.value]) chatMessages.value[toUuid.value] = []
-    chatMessages.value[toUuid.value].push({ ...msgObj, timestamp: Date.now() })
+    if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
+    chatMessages.value[TOUUID.value].push({ ...msgObj, timestamp: Date.now() })
     input.value = ''
 }
 function showNotImpl(type) {
@@ -838,7 +818,7 @@ function generateMessageId() {
 
 // 注册消息元素到ACK管理器
 function registerMessageElement(msg, el) {
-    if (el && msg.messageId && msg.from !== myUuid.value) {
+    if (el && msg.messageId && msg.from !== MYUUID.value) {
         nextTick(() => {
             ackManager.registerMessageElement(msg.messageId, el, msg.from)
         })
@@ -864,7 +844,7 @@ function handleMessagesAcked(event) {
 }
 
 // 监听聊天对象变化，标记当前聊天为已读
-watch(toUuid, (newUuid, oldUuid) => {
+watch(TOUUID, (newUuid, oldUuid) => {
     if (newUuid && newUuid !== oldUuid) {
         // 切换聊天时，标记当前聊天的所有消息为已读
         nextTick(() => {
@@ -878,12 +858,12 @@ watch(toUuid, (newUuid, oldUuid) => {
 
 // 监听页面可见性变化
 watch(() => document.hidden, (hidden) => {
-    if (!hidden && toUuid.value) {
+    if (!hidden && TOUUID.value) {
         // 页面变为可见时，标记当前聊天为已读
         nextTick(() => {
             const currentMessages = messages.value
             if (currentMessages.length > 0) {
-                ackManager.markChatAsRead(toUuid.value, currentMessages)
+                ackManager.markChatAsRead(TOUUID.value, currentMessages)
             }
         })
     }
