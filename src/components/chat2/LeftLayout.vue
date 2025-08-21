@@ -2298,7 +2298,6 @@ function formatDeadline(deadline) {
 
 .friend-item.active {
     background: var(--accent-color, rgba(88, 101, 242, 0.1));
-    border-color: var(--accent-color, #5865f2);
 }
 
 .add-friend-item {
