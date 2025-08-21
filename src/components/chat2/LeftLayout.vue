@@ -69,6 +69,30 @@
                 </div>
             </div>
             <div class="nav-item-wrapper">
+                <div class="nav-indicator" :class="{ active: navTab === 'channel' }"></div>
+                <div class="nav-item" :class="{ active: navTab === 'channel' }" @click="handleNavClick('channel')" title="频道">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="nav-item-wrapper">
+                <div class="nav-indicator" :class="{ active: navTab === 'favorite' }"></div>
+                <div class="nav-item" :class="{ active: navTab === 'favorite' }" @click="handleNavClick('favorite')" title="收藏">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="nav-item-wrapper">
+                <div class="nav-indicator" :class="{ active: navTab === 'plan' }"></div>
+                <div class="nav-item" :class="{ active: navTab === 'plan' }" @click="handleNavClick('plan')" title="计划">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="nav-item-wrapper">
                 <div class="nav-indicator"></div>
                 <div class="nav-item" @click="showSettings = true" title="设置">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -76,9 +100,11 @@
                     </svg>
                 </div>
             </div>
+            
         </div>
     </div>
-    <div class="activated-list">
+    <div class="activated-list" :style="{ width: activatedListWidth + 'px' }">
+        <div class="resize-handle" @mousedown="startResize"></div>
         <div v-if="navTab === 'friend'">
             <!-- 添加好友项，置顶显示 -->
             <div class="friend-item add-friend-item" @click="showAddFriend = true">
@@ -109,7 +135,7 @@
                     </span>
                     <span class="search-avatar" v-else-if="f.avatar && f.avatar.startsWith('<svg')"
                         v-html="f.avatar"></span>
-                    <span class="search-avatar" v-else>{{ f.avatar || '😀' }}</span>
+                    <span class="search-avatar" v-else>{{ f.avatar || (f.nickname || f.username || '?').charAt(0).toUpperCase() }}</span>
                     <span class="search-nickname">{{ f.nickname || f.username }}</span>
                     <span class="search-uuid">({{ f.email }})</span>
                     <span class="search-add">点击添加</span>
@@ -121,6 +147,7 @@
                 <div class="friend-avatar">
                     <span v-if="friend.avatarType === 'emoji'" class="avatar-emoji">{{ friend.avatar || '😀' }}</span>
                     <span v-else-if="friend.avatarType === 'svg'" v-html="friend.avatar"></span>
+                    <span v-else class="avatar-text">{{ friend.name ? friend.name.charAt(0).toUpperCase() : '?' }}</span>
                 </div>
                 <div class="friend-info">
                     <div class="friend-name">{{ friend.name }}</div>
@@ -190,9 +217,13 @@
                 <div class="group-avatar">
                     <span v-if="group.avatarType === 'emoji'" class="avatar-emoji">{{ group.avatar }}</span>
                     <span v-else-if="group.avatarType === 'svg'" v-html="group.avatar"></span>
+                    <span v-else class="avatar-text">{{ group.name ? group.name.charAt(0).toUpperCase() : '?' }}</span>
                 </div>
                 <div class="group-info">
-                    <div class="group-name">{{ group.name }}</div>
+                    <div class="group-name">
+                        {{ group.name }}
+                        <span v-if="group.isOwner" class="owner-badge" title="我创建的群聊">👑</span>
+                    </div>
                     <div class="group-uuid">{{ group.uuid }}</div>
                 </div>
                 <div v-if="group.unread > 0" class="group_unread-bubble">{{ group.unread }}</div>
@@ -209,7 +240,7 @@
                 </div>
             </div>
         </div>
-        <div v-else-if="navTab === 'moment'">
+        <div v-else-if="navTab === 'moment'" class="moment-container">
             <div class="moment-list-title-row">
                 <div class="moment-list-title">此刻</div>
                 <button class="add-moment-btn" @click="showAddMoment = true">发布动态</button>
@@ -247,7 +278,7 @@
                     </div>
                     <div class="moment-content">{{ moment.content }}</div>
                     <div class="moment-actions">
-                        <button class="moment-action-btn" @click="likeMoment(moment)">
+                        <button class="moment-action-btn" :class="{ 'like-animation': moment.isLiking }" @click="likeMoment(moment)">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <path
@@ -313,6 +344,62 @@
                 </div>
             </div>
         </div>
+        <div v-else-if="navTab === 'plan'" class="plan-container">
+            <div class="plan-list-title-row">
+                <div class="plan-list-title">计划</div>
+                <button class="add-plan-btn" @click="showAddPlan = true">添加计划</button>
+            </div>
+            <div v-if="showAddPlan" class="add-plan-dialog">
+                <div class="form-group">
+                    <label>计划标题：</label>
+                    <input v-model="newPlanTitle" placeholder="输入计划标题" class="plan-input" maxlength="50" />
+                </div>
+                <div class="form-group">
+                    <label>计划描述：</label>
+                    <textarea v-model="newPlanDescription" placeholder="输入计划描述（可选）" class="plan-textarea" maxlength="200"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>截止日期：</label>
+                    <input v-model="newPlanDeadline" type="datetime-local" class="plan-input" />
+                </div>
+                <div class="form-group">
+                    <label>优先级：</label>
+                    <select v-model="newPlanPriority" class="plan-select">
+                        <option value="low">低</option>
+                        <option value="medium">中</option>
+                        <option value="high">高</option>
+                    </select>
+                </div>
+                <div class="plan-actions">
+                    <button class="create-plan-btn" @click="createPlan" :disabled="!newPlanTitle.trim() || creatingPlan">创建计划</button>
+                    <button class="cancel-plan-btn" @click="cancelAddPlan">取消</button>
+                </div>
+            </div>
+            <div class="plan-list">
+                <div v-for="plan in plans" :key="plan.id" class="plan-item" :class="{ completed: plan.completed }">
+                    <div class="plan-header">
+                        <div class="plan-checkbox">
+                            <input type="checkbox" v-model="plan.completed" @change="togglePlanStatus(plan)" />
+                        </div>
+                        <div class="plan-info">
+                            <div class="plan-title" :class="{ completed: plan.completed }">{{ plan.title }}</div>
+                            <div class="plan-meta">
+                                <span class="plan-priority" :class="plan.priority">{{ getPriorityText(plan.priority) }}</span>
+                                <span v-if="plan.deadline" class="plan-deadline">{{ formatDeadline(plan.deadline) }}</span>
+                            </div>
+                        </div>
+                        <div class="plan-actions-menu">
+                            <button class="plan-action-btn" @click="deletePlan(plan.id)">删除</button>
+                        </div>
+                    </div>
+                    <div v-if="plan.description" class="plan-description">{{ plan.description }}</div>
+                </div>
+                <div v-if="plans.length === 0" class="empty-plans">
+                    <div class="empty-icon">📋</div>
+                    <div class="empty-text">还没有计划，快来添加第一个吧！</div>
+                </div>
+            </div>
+        </div>
         <div v-if="showFriendRequest" class="friend-request-overlay">
             <div class="friend-request-dialog">
                 <h3>好友请求</h3>
@@ -343,7 +430,7 @@
                     <div class="friend-avatar-preview">
                         <span v-if="selectedFriendToAdd?.avatar && selectedFriendToAdd.avatar.startsWith('<svg')"
                             v-html="selectedFriendToAdd.avatar"></span>
-                        <span v-else>{{ selectedFriendToAdd?.avatar || '😀' }}</span>
+                        <span v-else>{{ selectedFriendToAdd?.avatar || (selectedFriendToAdd?.nickname || selectedFriendToAdd?.username || '?').charAt(0).toUpperCase() }}</span>
                     </div>
                     <div class="friend-details">
                         <div class="friend-name-preview">{{ selectedFriendToAdd?.nickname ||
@@ -481,6 +568,41 @@
                 </div>
             </div>
         </div>
+        
+        <!-- 底部个人信息区域 -->
+        <div class="bottom-user-info">
+            <div class="user-profile-section">
+                <div class="user-avatar-small">
+                    <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="" width="32" height="32">
+                        <mask id="bottomAvatar" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+                            <rect width="36" height="36" rx="72" fill="#FFFFFF"></rect>
+                        </mask>
+                        <g mask="url(#bottomAvatar)">
+                            <rect width="36" height="36" fill="#49007e"></rect>
+                            <rect x="0" y="0" width="36" height="36" transform="translate(7 1) rotate(53 18 18) scale(1.2)"
+                                fill="#ff7d10" rx="6"></rect>
+                            <g transform="translate(3.5 -4) rotate(3 18 18)">
+                                <path d="M15 21c2 1 4 1 6 0" stroke="#000000" fill="none" stroke-linecap="round"></path>
+                                <rect x="11" y="14" width="1.5" height="2" rx="1" stroke="none" fill="#000000"></rect>
+                                <rect x="23" y="14" width="1.5" height="2" rx="1" stroke="none" fill="#000000"></rect>
+                            </g>
+                        </g>
+                    </svg>
+                    <div class="status-indicator online"></div>
+                </div>
+                <div class="user-info-text">
+                    <div class="username-display">{{ myName }}</div>
+                    <div class="user-status">在线</div>
+                </div>
+                <div class="user-actions">
+                    <button class="action-btn" @click="showSettings = true" title="设置">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast 提示框 -->
@@ -501,6 +623,11 @@ const userinfo = ref({})
 const token = localStorage.getItem(`${sessionKey}`)
 const navTab = ref('friend') // 当前左侧tab，默认展示好友
 const showUserInfo = ref(false) // 控制用户信息弹出框显示
+// 可调整宽度相关变量
+const activatedListWidth = ref(380) // activated-list的宽度
+const isResizing = ref(false) // 是否正在调整大小
+const minWidth = 280 // 最小宽度
+const maxWidth = 600 // 最大宽度
 const showAddFriend = ref(false)
 const newFriendName = ref('')
 const searchResults = ref([])
@@ -556,6 +683,15 @@ const newMomentContent = ref('')
 const publishingMoment = ref(false)
 const moments = ref([])
 const submittingComment = ref(false)
+
+// 计划功能相关
+const showAddPlan = ref(false)
+const newPlanTitle = ref('')
+const newPlanDescription = ref('')
+const newPlanDeadline = ref('')
+const newPlanPriority = ref('medium')
+const creatingPlan = ref(false)
+const plans = ref([])
 // const currentChatID = ref(0)
 onMounted(async () => {
     await getFriendList()
@@ -591,6 +727,8 @@ function handleNavClick(tab) {
         getMomentList()
         // 清除未读时刻状态
         hasUnreadMoments.value = false
+    } else if (tab === 'plan') {
+        loadPlans()
     }
 }
 async function searchFriend() {
@@ -719,7 +857,8 @@ async function createGroup() {
             name: data.group_info.group_name,
             type: type,
             description: description,
-            unread: 0
+            unread: 0,
+            isOwner: true  // 标识为群主
         })
 
         showToastMessage('群组创建成功', 'success')
@@ -759,7 +898,8 @@ async function joinGroup() {
         groups.value.push({
             uuid: data.data.group_uuid,
             name: data.data.group_name,
-            unread: 0
+            unread: 0,
+            isOwner: false  // 标识为群成员
         })
 
         showToastMessage('成功加入群聊', 'success')
@@ -914,7 +1054,6 @@ async function getGroupList() {
             showToastMessage(data.msg, 'info')
             return
         } else if (data.code == 0) {
-            showToastMessage(data.msg, 'success')
             // 从localStorage获取未读消息计数
             const savedUnreadCounts = JSON.parse(localStorage.getItem(`unreadCounts_${sessionKey}`) || '{}')
             // 处理返回的数据结构
@@ -922,7 +1061,8 @@ async function getGroupList() {
                 groups.value = data.data.map(item => ({
                     uuid: item.group_uuid,
                     name: item.group_name,
-                    unread: savedUnreadCounts[item.group_uuid] || 0
+                    unread: savedUnreadCounts[item.group_uuid] || 0,
+                    isOwner: item.is_owner || false  // 从API获取群主信息，默认为false
                 }))
             } else {
                 // 如果data.data不是数组，尝试处理其他可能的数据结构
@@ -1109,16 +1249,16 @@ async function publishMoment() {
                 content: content
             })
         })
-        //const data = await resp.json()
-        // if (data.code === 200) {
-        //     alert('动态发布成功')
-        // } else {
-        //     throw new Error(data.msg || '发布失败')
-        // }
+        const data = await resp.json()
+        if (data.code === 0) {
+            showToastMessage(data.msg, 'success')
+        } else {
+            showToastMessage('发布失败: ' + data.msg, 'error')
+        }
         // 暂时使用本地存储模拟
         const newMoment = {
             id: Date.now(),
-            author: myName,
+            author: myName.value,
             content: content,
             timestamp: new Date().toISOString()
         }
@@ -1188,12 +1328,11 @@ function formatTime(timestamp) {
 
 // todo 点赞动态
 async function likeMoment(moment) {
-    console.log('点赞动态2:', moment['moment_id'])
-    console.log('moment_id类型:', typeof moment['moment_id'])
     const momentId = parseInt(moment['moment_id'])
-    console.log('parseInt后的值:', momentId)
-    console.log('parseInt后的类型:', typeof momentId)
     try {
+        // 触发动画
+        moment.isLiking = true
+        
         // 这里可以添加实际的API调用
         const requestBody = {
             moment_id: momentId
@@ -1208,16 +1347,21 @@ async function likeMoment(moment) {
         })
         const data = await resp.json()
         if (data.code === 0) {
-            showToastMessage('点赞成功', 'success')
             if (!moment.likes) {
                 moment.likes = 0
             }
             moment.likes++
-            console.log('点赞动态:', moment)
+            // 延迟移除动画状态
+            setTimeout(() => {
+                moment.isLiking = false
+            }, 600)
         } else {
-            throw new Error(data.msg || '你已经点赞过了')
+            // 如果失败，立即移除动画状态
+            moment.isLiking = false
+            throw new Error('你已经点赞过了')
         }
     } catch (e) {
+        moment.isLiking = false
         showToastMessage('点赞失败: ' + e.message, 'error')
     }
 }
@@ -1225,8 +1369,8 @@ async function likeMoment(moment) {
 // 切换评论显示状态
 function toggleComments(moment) {
     moment.showComments = !moment.showComments
-    // 如果是第一次打开评论区，初始化评论数据
-    if (moment.showComments && !moment.comments) {
+    // 每次打开评论区都请求最新的评论数据
+    if (moment.showComments) {
         moment.comments = []
         moment.newComment = ''
         // 获取该动态的评论列表
@@ -1296,18 +1440,154 @@ async function getCommentList(moment) {
         })
         const data = await resp.json()
         if (data.code === 0) {
-            moment.comments = data.data.map(item => ({
-                id: item.comment_id,
-                author: item.username,
-                content: item.content,
-                timestamp: item.create_time
-            }))
+            if (data.comment_list){
+                moment.comments = data.comment_list.map(item => ({
+                    id: item.user_id,
+                    author: item.username,
+                    content: item.content,
+                    timestamp: item.create_time
+                }))
+            } else {
+                moment.comments = []
+            }
         }
     } catch (e) {
         showToastMessage('获取评论列表失败: ' + e.message, 'error')
-        // 如果获取失败，初始化为空数组
-        // an't access property "group_id", l.data is undefine
         moment.comments = []
+    }
+}
+
+// 拖拽调整宽度相关函数
+function startResize(event) {
+    isResizing.value = true
+    document.addEventListener('mousemove', handleResize)
+    document.addEventListener('mouseup', stopResize)
+    event.preventDefault()
+}
+
+function handleResize(event) {
+    if (!isResizing.value) return
+    
+    const containerRect = document.querySelector('.chat-layout').getBoundingClientRect()
+    const newWidth = event.clientX - containerRect.left - 72 // 减去left-list的宽度
+    
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+        activatedListWidth.value = newWidth
+    }
+}
+
+function stopResize() {
+    isResizing.value = false
+    document.removeEventListener('mousemove', handleResize)
+    document.removeEventListener('mouseup', stopResize)
+    
+    // 保存宽度到localStorage
+    localStorage.setItem('activatedListWidth', activatedListWidth.value.toString())
+}
+
+// 组件挂载时从localStorage恢复宽度
+onMounted(() => {
+    const savedWidth = localStorage.getItem('activatedListWidth')
+    if (savedWidth) {
+        const width = parseInt(savedWidth)
+        if (width >= minWidth && width <= maxWidth) {
+            activatedListWidth.value = width
+        }
+    }
+})
+
+// 计划相关函数
+function loadPlans() {
+    const savedPlans = localStorage.getItem('userPlans')
+    if (savedPlans) {
+        plans.value = JSON.parse(savedPlans)
+    }
+}
+
+function savePlans() {
+    localStorage.setItem('userPlans', JSON.stringify(plans.value))
+}
+
+function createPlan() {
+    if (!newPlanTitle.value.trim()) return
+    
+    creatingPlan.value = true
+    
+    const newPlan = {
+        id: Date.now(),
+        title: newPlanTitle.value.trim(),
+        description: newPlanDescription.value.trim(),
+        deadline: newPlanDeadline.value,
+        priority: newPlanPriority.value,
+        completed: false,
+        createdAt: new Date().toISOString()
+    }
+    
+    plans.value.unshift(newPlan)
+    savePlans()
+    
+    // 重置表单
+    newPlanTitle.value = ''
+    newPlanDescription.value = ''
+    newPlanDeadline.value = ''
+    newPlanPriority.value = 'medium'
+    showAddPlan.value = false
+    creatingPlan.value = false
+    
+    showToastMessage('计划创建成功', 'success')
+}
+
+function cancelAddPlan() {
+    newPlanTitle.value = ''
+    newPlanDescription.value = ''
+    newPlanDeadline.value = ''
+    newPlanPriority.value = 'medium'
+    showAddPlan.value = false
+}
+
+function togglePlanStatus(plan) {
+    plan.completed = !plan.completed
+    savePlans()
+    showToastMessage(plan.completed ? '计划已完成' : '计划已重新激活', 'success')
+}
+
+function deletePlan(planId) {
+    if (confirm('确定要删除这个计划吗？')) {
+        plans.value = plans.value.filter(plan => plan.id !== planId)
+        savePlans()
+        showToastMessage('计划已删除', 'success')
+    }
+}
+
+function getPriorityText(priority) {
+    const priorityMap = {
+        low: '低优先级',
+        medium: '中优先级',
+        high: '高优先级'
+    }
+    return priorityMap[priority] || '中优先级'
+}
+
+function formatDeadline(deadline) {
+    if (!deadline) return ''
+    const date = new Date(deadline)
+    const now = new Date()
+    const diffTime = date.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) {
+        return '已过期'
+    } else if (diffDays === 0) {
+        return '今天到期'
+    } else if (diffDays === 1) {
+        return '明天到期'
+    } else if (diffDays <= 7) {
+        return `${diffDays}天后到期`
+    } else {
+        return date.toLocaleDateString('zh-CN', {
+            month: 'short',
+            day: 'numeric'
+        })
     }
 }
 </script>
@@ -1368,6 +1648,17 @@ async function getCommentList(moment) {
 .avatar-emoji {
     font-size: 48px;
     display: inline-block;
+}
+
+.avatar-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 .my-name {
@@ -1572,11 +1863,31 @@ async function getCommentList(moment) {
 .activated-list {
     width: 380px;
     background: var(--bg-secondary, #2f3136);
-    border-right: 1px solid var(--border-color, #40444b);
     display: flex;
     flex-direction: column;
-    padding: 16px 0 8px 0;
+    /* padding: 16px 0 8px 0; */
     color: var(--text-primary, #dcddde);
+    position: relative;
+}
+
+.resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    background: transparent;
+    cursor: col-resize;
+    z-index: 10;
+    transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+    background: var(--accent-color, #5865f2);
+}
+
+.resize-handle:active {
+    background: var(--accent-color, #5865f2);
 }
 
 .friend-list-title {
@@ -1664,8 +1975,9 @@ async function getCommentList(moment) {
 
 .add-friend-dialog {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    padding: 16px;
+    /* padding: 16px; */
     background: #36393f;
     border: 1px solid #40444b;
     border-radius: 8px;
@@ -1894,7 +2206,6 @@ async function getCommentList(moment) {
 .add-group-dialog {
     display: flex;
     align-items: center;
-    padding: 16px;
     background: #36393f;
     border: 1px solid #40444b;
     border-radius: 8px;
@@ -2178,6 +2489,19 @@ async function getCommentList(moment) {
     font-weight: bold;
     font-size: 15px;
     color: #dcddde;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.owner-badge {
+    font-size: 14px;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.owner-badge:hover {
+    opacity: 1;
 }
 
 .group-uuid {
@@ -2731,15 +3055,15 @@ async function getCommentList(moment) {
 
 .add-moment-dialog {
     padding: 16px;
-    background: #fff;
-    border-bottom: 1px solid #eee;
+    background: var(--bg-secondary, #fff);
+    border-bottom: 1px solid var(--border-color, #eee);
 }
 
 .add-moment-textarea {
     width: 100%;
     min-height: 80px;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.5;
@@ -2747,12 +3071,14 @@ async function getCommentList(moment) {
     box-sizing: border-box;
     font-family: inherit;
     transition: border-color 0.2s;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #333);
 }
 
 .add-moment-textarea:focus {
     outline: none;
-    border-color: #42b983;
-    box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
+    border-color: var(--accent-color, #42b983);
+    box-shadow: 0 0 0 3px var(--accent-color-alpha, rgba(66, 185, 131, 0.1));
 }
 
 .moment-actions {
@@ -2768,8 +3094,8 @@ async function getCommentList(moment) {
 }
 
 .publish-moment-btn {
-    background: #42b983;
-    color: var(--text-primary, white);
+    background: var(--accent-color, #42b983);
+    color: white;
     border: none;
     padding: 8px 16px;
     border-radius: 6px;
@@ -2780,18 +3106,18 @@ async function getCommentList(moment) {
 }
 
 .publish-moment-btn:hover:not(:disabled) {
-    background: #369870;
+    background: var(--accent-hover, #369870);
 }
 
 .publish-moment-btn:disabled {
-    background: #ccc;
+    background: var(--bg-disabled, #ccc);
     cursor: not-allowed;
 }
 
 .cancel-moment-btn {
-    background: #f8f9fa;
+    background: var(--bg-tertiary, #f8f9fa);
     color: var(--text-secondary, #666);
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color, #ddd);
     padding: 8px 16px;
     border-radius: 6px;
     font-size: 14px;
@@ -2800,23 +3126,30 @@ async function getCommentList(moment) {
 }
 
 .cancel-moment-btn:hover {
-    background: #e9ecef;
-    border-color: #bbb;
+    background: var(--bg-hover, #e9ecef);
+    border-color: var(--border-hover, #bbb);
+}
+
+.moment-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .moment-list {
-    max-height: 500px;
+    flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .moment-item {
     padding: 16px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
     transition: background 0.2s;
 }
 
 .moment-item:hover {
-    background: #f8f9fa;
+    background: var(--bg-hover, #f8f9fa);
 }
 
 .moment-header {
@@ -2862,7 +3195,7 @@ async function getCommentList(moment) {
     gap: 16px;
     margin-top: 12px;
     padding-top: 8px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-color, #f0f0f0);
 }
 
 .moment-action-btn {
@@ -2880,12 +3213,44 @@ async function getCommentList(moment) {
 }
 
 .moment-action-btn:hover {
-    background: #f5f5f5;
+    background: var(--bg-tertiary, #f5f5f5);
     color: var(--text-primary, #333);
 }
 
 .moment-action-btn svg {
     stroke-width: 1.5;
+}
+
+/* 点赞动画效果 */
+.moment-action-btn.like-animation {
+    animation: likeAnimation 0.6s ease-out;
+    color: #ff6b6b;
+}
+
+.moment-action-btn.like-animation svg {
+    fill: #ff6b6b;
+    stroke: #ff6b6b;
+}
+
+@keyframes likeAnimation {
+    0% {
+        transform: scale(1);
+    }
+    15% {
+        transform: scale(1.2);
+    }
+    30% {
+        transform: scale(0.95);
+    }
+    45% {
+        transform: scale(1.1);
+    }
+    60% {
+        transform: scale(0.98);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .empty-moments {
@@ -3016,8 +3381,8 @@ async function getCommentList(moment) {
 .moment-comments {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #f0f0f0;
-    background: #fafafa;
+    border-top: 1px solid var(--border-color, #f0f0f0);
+    background: var(--bg-tertiary, #fafafa);
     border-radius: 8px;
     padding: 16px;
 }
@@ -3030,7 +3395,7 @@ async function getCommentList(moment) {
     width: 100%;
     min-height: 60px;
     padding: 12px;
-    border: 1px solid #e1e5e9;
+    border: 1px solid var(--border-color, #e1e5e9);
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.5;
@@ -3038,16 +3403,18 @@ async function getCommentList(moment) {
     font-family: inherit;
     transition: all 0.2s ease;
     box-sizing: border-box;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #333);
 }
 
 .comment-input:focus {
     outline: none;
-    border-color: #42b983;
-    box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
+    border-color: var(--accent-color, #42b983);
+    box-shadow: 0 0 0 3px var(--accent-color-alpha, rgba(66, 185, 131, 0.1));
 }
 
 .comment-input::placeholder {
-    color: #999;
+    color: var(--text-secondary, #999);
 }
 
 .comment-actions {
@@ -3059,11 +3426,11 @@ async function getCommentList(moment) {
 
 .comment-char-count {
     font-size: 12px;
-    color: #888;
+    color: var(--text-secondary, #888);
 }
 
 .submit-comment-btn {
-    background: #42b983;
+    background: var(--accent-color, #42b983);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -3075,12 +3442,12 @@ async function getCommentList(moment) {
 }
 
 .submit-comment-btn:hover:not(:disabled) {
-    background: #369870;
+    background: var(--accent-hover, #369870);
     transform: translateY(-1px);
 }
 
 .submit-comment-btn:disabled {
-    background: #ccc;
+    background: var(--bg-disabled, #ccc);
     cursor: not-allowed;
     transform: none;
 }
@@ -3091,17 +3458,17 @@ async function getCommentList(moment) {
 }
 
 .comment-item {
-    background: white;
+    background: var(--bg-primary, white);
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 8px;
-    border: 1px solid #f0f0f0;
+    border: 1px solid var(--border-color, #f0f0f0);
     transition: all 0.2s ease;
 }
 
 .comment-item:hover {
-    border-color: #e1e5e9;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-color: var(--border-hover, #e1e5e9);
+    background: var(--bg-hover, #f8f9fa);
 }
 
 .comment-item:last-child {
@@ -3428,5 +3795,384 @@ async function getCommentList(moment) {
 
 .confirm-btn:active {
     transform: translateY(0);
+}
+
+/* 底部个人信息区域样式 */
+.bottom-user-info {
+    margin-top: auto;
+    padding: 8px;
+    background: var(--bg-tertiary, #292b2f);
+    border-top: 1px solid var(--border-color, #40444b);
+}
+
+.user-profile-section {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.user-profile-section:hover {
+    background: var(--bg-hover, rgba(79, 84, 92, 0.16));
+}
+
+.user-avatar-small {
+    position: relative;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-tertiary, #292b2f);
+}
+
+.status-indicator.online {
+    background: #3ba55d;
+}
+
+.status-indicator.idle {
+    background: #faa81a;
+}
+
+.status-indicator.dnd {
+    background: #ed4245;
+}
+
+.status-indicator.offline {
+    background: #747f8d;
+}
+
+.user-info-text {
+    flex: 1;
+    min-width: 0;
+    margin-right: 8px;
+}
+
+.username-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    line-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-status {
+    font-size: 12px;
+    color: var(--text-secondary, #b9bbbe);
+    line-height: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    color: var(--text-secondary, #b9bbbe);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: var(--bg-hover, rgba(79, 84, 92, 0.3));
+    color: var(--text-primary, #dcddde);
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+/* 确保左侧面板使用flex布局 */
+.left-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 计划相关样式 */
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.plan-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #2c2c2c);
+}
+
+.add-plan-btn {
+    background: var(--primary-color, #5865f2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.add-plan-btn:hover {
+    background: var(--primary-hover, #4752c4);
+    transform: translateY(-1px);
+}
+
+.add-plan-form {
+    background: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #2c2c2c);
+    margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 6px;
+    font-size: 14px;
+    background: var(--bg-primary, #ffffff);
+    color: var(--text-primary, #2c2c2c);
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color, #5865f2);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-primary {
+    background: var(--primary-color, #5865f2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover, #4752c4);
+}
+
+.btn-primary:disabled {
+    background: var(--bg-disabled, #a0a0a0);
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: var(--bg-secondary, #ffffff);
+    color: var(--text-secondary, #6c757d);
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover, #f8f9fa);
+}
+
+.plan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.plan-item {
+    background: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.plan-item:hover {
+    border-color: var(--primary-color, #5865f2);
+    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.1);
+}
+
+.plan-item.completed {
+    opacity: 0.7;
+    background: var(--bg-muted, #f8f9fa);
+}
+
+.plan-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.plan-item-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #2c2c2c);
+    margin: 0;
+    flex: 1;
+}
+
+.plan-item.completed .plan-item-title {
+    text-decoration: line-through;
+    color: var(--text-muted, #6c757d);
+}
+
+.plan-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn-small {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #6c757d);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn-small:hover {
+    background: var(--bg-hover, #f8f9fa);
+    color: var(--text-primary, #2c2c2c);
+}
+
+.action-btn-small.complete {
+    color: var(--success-color, #28a745);
+}
+
+.action-btn-small.delete {
+    color: var(--danger-color, #dc3545);
+}
+
+.plan-item-description {
+    font-size: 14px;
+    color: var(--text-secondary, #6c757d);
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.plan-item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted, #6c757d);
+}
+
+.plan-priority {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.plan-priority.high {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--danger-color, #dc3545);
+}
+
+.plan-priority.medium {
+    background: rgba(255, 193, 7, 0.1);
+    color: var(--warning-color, #ffc107);
+}
+
+.plan-priority.low {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success-color, #28a745);
+}
+
+.plan-deadline {
+    font-weight: 500;
+}
+
+.plan-deadline.overdue {
+    color: var(--danger-color, #dc3545);
+}
+
+.plan-deadline.today {
+    color: var(--warning-color, #ffc107);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted, #6c757d);
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.empty-state-subtext {
+    font-size: 14px;
+    opacity: 0.8;
 }
 </style>

@@ -13,6 +13,10 @@
   --shadow: rgba(0, 0, 0, 0.1);
   --accent-color: #42b983;
   --accent-hover: #369870;
+  --accent-color-alpha: rgba(66, 185, 131, 0.1);
+  --bg-hover: #e9ecef;
+  --bg-disabled: #ccc;
+  --border-hover: #bbb;
   --message-self: #d1f5d3;
   --message-other: #e6e6e6;
   --input-bg: #ffffff;
@@ -21,8 +25,8 @@
 
 /* 深色主题 */
 .dark-theme {
-  --bg-primary: #36393f;
-  --bg-secondary: #2f3136;
+  --bg-primary: #292a2c;
+  --bg-secondary: #28292b;
   --bg-tertiary: #202225;
   --text-primary: #dcddde;
   --text-secondary: #b9bbbe;
@@ -31,11 +35,14 @@
   --shadow: rgba(0, 0, 0, 0.3);
   --accent-color: #5865f2;
   --accent-hover: #4752c4;
+  --accent-color-alpha: rgba(88, 101, 242, 0.1);
+  --bg-hover: #40444b;
+  --bg-disabled: #72767d;
+  --border-hover: #72767d;
   --message-self: #5865f2;
   --message-other: #40444b;
   --input-bg: #40444b;
   --input-border: #202225;
-  --bg-hover: #4752c4;
 }
 
 /* 护眼主题 */
@@ -50,6 +57,10 @@
   --shadow: rgba(60, 46, 38, 0.1);
   --accent-color: #8fbc8f;
   --accent-hover: #7ba05b;
+  --accent-color-alpha: rgba(143, 188, 143, 0.1);
+  --bg-hover: #e6dcc6;
+  --bg-disabled: #d4c4a8;
+  --border-hover: #c4b49a;
   --message-self: #e6f3e6;
   --message-other: #f0ead6;
   --input-bg: #fefcf3;

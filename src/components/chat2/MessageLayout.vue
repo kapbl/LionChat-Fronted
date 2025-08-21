@@ -2,13 +2,18 @@
     <div class="chat-container">
         <div class="chat-header chat-header-center">
             <span v-if="currentChatName">{{ currentChatName }}</span>
-            <span v-else>select</span>
+            <span v-else>###</span>
             <div v-if="currentChatName" class="header-actions">
                 <button @click="startVoiceCall" class="voice-call-btn" title="语音通话">
-                    📞
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
                 </button>
                 <button @click="startVideoCall" class="video-call-btn" title="视频通话">
-                    📹
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -17,7 +22,7 @@
                  :key="msg.messageId || idx" 
                  :class="['message', msg.from === MYUUID ? 'self' : 'other']"
                  :ref="el => registerMessageElement(msg, el)">
-                <div class="msg-bubble">
+                <div class="msg-bubble" @mouseenter="showMessageActions(msg, idx)" @mouseleave="hideMessageActions">
                     <span class="sender">{{ msg.fromUsername }}：</span>
                     <span v-if="msg.contentType === 2" class="content">
                         📎 文件：<a :href="msg.url" download>{{ msg.content }}</a> ({{ formatFileSize(msg.file?.length) }})
@@ -43,6 +48,32 @@
                             <span v-else class="unread-indicator">✓</span>
                         </span>
                     </div>
+                    
+                    <!-- 消息悬停操作按钮 -->
+                    <div v-if="hoveredMessageIndex === idx" class="message-actions" :class="msg.from === MYUUID ? 'actions-left' : 'actions-right'">
+                        <button class="action-btn emoji-btn" @click="showEmojiReaction(msg)" title="表情">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="m9 9 1.5 1.5L9 12"></path>
+                                <path d="m15 9-1.5 1.5L15 12"></path>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            </svg>
+                        </button>
+                        <button class="action-btn ai-btn" @click="askAI(msg)" title="AI">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                        </button>
+                        <button class="action-btn more-btn" @click="showMoreOptions(msg)" title="更多">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -60,14 +91,75 @@
         </div>
         <div class="input-area-wrap">
             <div class="input-actions input-actions-top">
-                <button class="input-action-btn" @click="toggleEmojiPanel" title="发送表情">😊</button>
+                <button class="input-action-btn" @click="toggleEmojiPanel" title="发送表情">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m9 9 1.5 1.5L9 12"/>
+                        <path d="m15 9-1.5 1.5L15 12"/>
+                        <path d="M8 15s1.5 2 4 2 4-2 4-2"/>
+                    </svg>
+                </button>
 
                 <input type="file" ref="fileInput" style="display: none" @change="handleFileSelect">
-                <button class="input-action-btn" @click="$refs.fileInput.click()" title="发送文件">📄</button>
+                <button class="input-action-btn" @click="$refs.fileInput.click()" title="发送文件">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                    </svg>
+                </button>
 
                 <button class="input-action-btn" @click="toggleRecording" :class="{ recording: isRecording }"
                     title="语音消息">
-                    {{ isRecording ? '⏹' : '🎤' }}
+                    <svg v-if="!isRecording" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" x2="12" y1="19" y2="23"/>
+                        <line x1="8" x2="16" y1="23" y2="23"/>
+                    </svg>
+                    <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="6" height="6" x="9" y="9" rx="1"/>
+                    </svg>
+                </button>
+
+                <button class="input-action-btn" @click="openGamePanel" title="游戏">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="12" x="2" y="6" rx="2"/>
+                        <circle cx="8" cy="12" r="2"/>
+                        <path d="m16 11.5 1 1 4-4"/>
+                    </svg>
+                </button>
+
+                <button class="input-action-btn" @click="openStickerPanel" title="贴纸">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12.4 2.7c.9-.9 2.5-.9 3.4 0l5.5 5.5c.9.9.9 2.5 0 3.4L16 17l-4 4-7-7 4-4 3.4-5.3z"/>
+                        <path d="M13.5 6.5 17 10"/>
+                        <path d="M10.5 13.5 7 10"/>
+                        <path d="m16 16 2 2"/>
+                    </svg>
+                </button>
+
+                <button class="input-action-btn" @click="openGifPanel" title="动图">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                        <circle cx="9" cy="9" r="2"/>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                        <path d="M3 7v10a2 2 0 0 0 2 2h14"/>
+                        <path d="M7 7h.01"/>
+                    </svg>
+                </button>
+
+                <button class="input-action-btn" @click="openSchedulePanel" title="预约">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                        <line x1="16" x2="16" y1="2" y2="6"/>
+                        <line x1="8" x2="8" y1="2" y2="6"/>
+                        <line x1="3" x2="21" y1="10" y2="10"/>
+                        <path d="M8 14h.01"/>
+                        <path d="M12 14h.01"/>
+                        <path d="M16 14h.01"/>
+                        <path d="M8 18h.01"/>
+                        <path d="M12 18h.01"/>
+                    </svg>
                 </button>
             </div>
             <div v-if="showEmojiPanel" class="emoji-panel" ref="emojiPanelRef">
@@ -141,7 +233,8 @@ import { useRoute } from 'vue-router'
 import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID, initializeChatMessages } from './state.js'
+import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID, initializeChatMessages, API_BASE_URL } from './state.js'
+
 import { getMessageStorage, loadAllMessages, saveMessages } from './messageStorage.js'
 
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
@@ -305,6 +398,11 @@ const typingTimer = ref(null)
 const textareaRef = ref(null)
 const isResizing = ref(false)
 const startY = ref(0)
+
+// 消息悬停操作相关
+const hoveredMessageIndex = ref(-1)
+const showEmojiReactionPanel = ref(false)
+const selectedMessage = ref(null)
 const startHeight = ref(0)
 async function handleFileSelect(event) {
     const file = event.target.files[0]
@@ -469,7 +567,8 @@ async function getOfflineMessages() {
             return
         }
         
-        const resp = await fetch(`http://localhost:9922/v1/api/message/getUnreadMessage?page=1&limit=50`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/message/getUnreadMessage?page=1&limit=50`, {
+
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -537,7 +636,7 @@ async function markMessagesAsRead(messageIds) {
             console.error('No token found for session:', sessionKey)
             return
         }
-        const resp = await fetch(`http://localhost:9922/v1/api/message/markAsRead`, {
+        const resp = await fetch(`${API_BASE_URL}/v1/api/message/markAsRead`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -1044,6 +1143,64 @@ function insertEmoji(emoji) {
     showEmojiPanel.value = false
     document.removeEventListener('mousedown', handleClickOutside)
 }
+
+// 消息悬停操作函数
+function showMessageActions(msg, index) {
+    hoveredMessageIndex.value = index
+}
+
+function hideMessageActions() {
+    hoveredMessageIndex.value = -1
+}
+
+function showEmojiReaction(msg) {
+    selectedMessage.value = msg
+    showEmojiReactionPanel.value = true
+    console.log('显示表情反应面板:', msg)
+}
+
+function askAI(msg) {
+    console.log('询问AI关于消息:', msg)
+    // 这里可以集成AI功能，比如翻译、总结等
+    alert(`AI功能开发中...\n消息内容: ${msg.content}`)
+}
+
+function showMoreOptions(msg) {
+    console.log('显示更多选项:', msg)
+    // 这里可以显示更多操作选项，如复制、转发、删除等
+    const options = ['复制消息', '转发消息', '回复消息', '删除消息']
+    const choice = prompt(`选择操作:\n${options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`)
+    
+    if (choice) {
+        const index = parseInt(choice) - 1
+        if (index >= 0 && index < options.length) {
+            handleMessageAction(options[index], msg)
+        }
+    }
+}
+
+function handleMessageAction(action, msg) {
+    switch (action) {
+        case '复制消息':
+            navigator.clipboard.writeText(msg.content)
+            alert('消息已复制到剪贴板')
+            break
+        case '转发消息':
+            alert('转发功能开发中...')
+            break
+        case '回复消息':
+            input.value = `回复 @${msg.fromUsername}: ${msg.content}\n`
+            break
+        case '删除消息':
+            if (confirm('确定要删除这条消息吗？')) {
+                // 这里添加删除消息的逻辑
+                alert('删除功能开发中...')
+            }
+            break
+        default:
+            console.log('未知操作:', action)
+    }
+}
 onBeforeUnmount(() => {
     document.removeEventListener('mousedown', handleClickOutside)
     // 清理拖拽事件监听器
@@ -1487,7 +1644,6 @@ watch(() => document.hidden, (hidden) => {
 
 .input-area {
     display: flex;
-    padding: 12px 0 2px 0;
     background: var(--bg-secondary, #fff);
     align-items: flex-end;
 }
@@ -1694,5 +1850,88 @@ watch(() => document.hidden, (hidden) => {
 
 .close-preview-btn:hover {
     background: var(--close-btn-hover, rgba(255, 255, 255, 1));
+}
+
+/* 消息悬停操作按钮样式 */
+.msg-bubble {
+    position: relative;
+}
+
+.message-actions {
+    position: absolute;
+    bottom: -35px;
+    display: flex;
+    gap: 4px;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    animation: fadeInDown 0.2s ease-out;
+}
+
+.message-actions.actions-left {
+    left: -8px;
+}
+
+.message-actions.actions-right {
+    right: -8px;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #6c757d);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+}
+
+.action-btn:hover {
+    background: var(--bg-hover, #f8f9fa);
+    color: var(--text-primary, #2c2c2c);
+    transform: scale(1.1);
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+.emoji-btn:hover {
+    background: rgba(255, 193, 7, 0.1);
+    color: var(--warning-color, #ffc107);
+}
+
+.ai-btn:hover {
+    background: rgba(88, 101, 242, 0.1);
+    color: var(--primary-color, #5865f2);
+}
+
+.more-btn:hover {
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--text-primary, #2c2c2c);
+}
+
+/* 确保消息气泡在悬停时有足够的层级 */
+.message:hover .msg-bubble {
+    z-index: 5;
 }
 </style>
