@@ -2301,11 +2301,11 @@ function formatDeadline(deadline) {
 }
 
 .add-friend-item {
-    background: linear-gradient(135deg, #5865f2 0%, #7289da 100%) !important;
+    /* background: linear-gradient(135deg, #5865f2 0%, #7289da 100%) !important; */
     color: white;
     margin: 12px 8px 8px 8px;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+    /* box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3); */
     transition: all 0.2s ease;
     border: none;
     position: relative;
