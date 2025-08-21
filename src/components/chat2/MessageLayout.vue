@@ -69,15 +69,17 @@
                     title="语音消息">
                     {{ isRecording ? '⏹' : '🎤' }}
                 </button>
-                <!-- <button class="input-action-btn" @click="showNotImpl('视频')" title="发送视频">🎥</button> -->
             </div>
             <div v-if="showEmojiPanel" class="emoji-panel" ref="emojiPanelRef">
                 <span v-for="emoji in emojiList" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">{{ emoji
                     }}</span>
             </div>
             <div class="input-area">
-                <textarea v-model="input" @keyup.enter="sendMessage" @input="handleInputChange" placeholder="输入消息..." rows="1"
-                    class="msg-textarea" />
+                <div class="textarea-container">
+                    <div class="resize-handle" @mousedown="startResize" title="拖拽调整大小"></div>
+                    <textarea v-model="input" @keyup.enter="sendMessage" @input="handleInputChange" placeholder="输入消息..." rows="1"
+                        class="msg-textarea" ref="textareaRef" />
+                </div>
                 <button @click="sendMessage">发送</button>
             </div>
         </div>
@@ -139,15 +141,18 @@ import { useRoute } from 'vue-router'
 import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID } from './state.js'
+import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID, initializeChatMessages } from './state.js'
+import { getMessageStorage, loadAllMessages, saveMessages } from './messageStorage.js'
 
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
-// import VoiceMessagePlayer from './VoiceMessagePlayer.vue'
 import { ackManager } from './ackManager.js'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
+// 获取消息存储管理器实例
+const messageStorage = getMessageStorage(sessionKey)
+
 const messages = computed(() => {
     const msgs = chatMessages.value[TOUUID.value] || []
     // 按时间戳排序消息，确保离线消息和实时消息正确排序
@@ -158,8 +163,78 @@ const messages = computed(() => {
 watch(TOUUID, async (newChatId, oldChatId) => {
     if (newChatId && newChatId !== oldChatId) {
         await markCurrentChatMessagesAsRead()
+        // 保存旧聊天的消息到本地存储
+        if (oldChatId && chatMessages.value[oldChatId]) {
+            saveMessagesToStorage(oldChatId, chatMessages.value[oldChatId])
+        }
     }
 }, { immediate: false })
+
+// 监听chatMessages变化，自动保存到本地存储
+watch(chatMessages, (newMessages, oldMessages) => {
+    // 遍历所有聊天，检查是否有新消息需要保存
+    Object.keys(newMessages).forEach(chatId => {
+        const newChatMessages = newMessages[chatId] || []
+        const oldChatMessages = (oldMessages && oldMessages[chatId]) || []
+        
+        // 如果消息数量发生变化，保存到本地存储
+        if (newChatMessages.length !== oldChatMessages.length) {
+            saveMessagesToStorage(chatId, newChatMessages)
+        }
+    })
+}, { deep: true })
+
+// 保存消息到本地存储
+function saveMessagesToStorage(chatId, messages) {
+    if (!chatId || !Array.isArray(messages)) return
+    
+    try {
+        messageStorage.saveChatMessages(chatId, messages)
+        console.log(`已保存聊天 ${chatId} 的 ${messages.length} 条消息到本地存储`)
+    } catch (error) {
+        console.error('保存消息到本地存储失败:', error)
+    }
+}
+
+// 从本地存储加载消息
+function loadMessagesFromStorage(chatId) {
+    if (!chatId) return []
+    
+    try {
+        const messages = messageStorage.loadChatMessages(chatId)
+        console.log(`从本地存储加载聊天 ${chatId} 的 ${messages.length} 条消息`)
+        return messages
+    } catch (error) {
+        console.error('从本地存储加载消息失败:', error)
+        return []
+    }
+}
+
+// 加载所有历史消息
+function loadAllHistoryMessages() {
+    try {
+        const allMessages = messageStorage.loadAllMessages()
+        
+        // 合并到当前的chatMessages中
+        Object.keys(allMessages).forEach(chatId => {
+            const storedMessages = allMessages[chatId]
+            if (storedMessages && storedMessages.length > 0) {
+                // 如果当前已有消息，需要合并并去重
+                if (chatMessages.value[chatId]) {
+                    const existingIds = new Set(chatMessages.value[chatId].map(msg => msg.messageId).filter(id => id))
+                    const newMessages = storedMessages.filter(msg => !existingIds.has(msg.messageId))
+                    chatMessages.value[chatId] = [...chatMessages.value[chatId], ...newMessages]
+                } else {
+                    chatMessages.value[chatId] = storedMessages
+                }
+            }
+        })
+        
+        console.log(`成功加载 ${Object.keys(allMessages).length} 个聊天的历史消息`)
+    } catch (error) {
+        console.error('加载历史消息失败:', error)
+    }
+}
 
 // 标记当前聊天对话的未读消息为已读
 async function markCurrentChatMessagesAsRead() {
@@ -216,6 +291,12 @@ const readMessageIds = ref(new Set()) // 已读消息ID集合
 const showTypingIndicator = ref(false)
 const typingUser = ref('')
 const typingTimer = ref(null)
+
+// 拖拽调整大小相关
+const textareaRef = ref(null)
+const isResizing = ref(false)
+const startY = ref(0)
+const startHeight = ref(0)
 async function handleFileSelect(event) {
     const file = event.target.files[0]
     if (!file) return
@@ -482,6 +563,9 @@ async function markMessagesAsRead(messageIds) {
 }
 
 onMounted(async () => {
+    // 首先初始化并加载历史消息
+    await initializeChatMessages(sessionKey)
+    
     // 加载 proto
     const root = await protobuf.load('/message.proto')
     MessageType.value = root.lookup('protocol.Message')
@@ -566,7 +650,7 @@ function handleWebSocketMessage(event) {
             default:
                 break;
         } 
-        saveUnreadCounts();
+        //saveUnreadCounts();
     } catch (e) {
          console.log("未知消息类型")
     }
@@ -825,6 +909,14 @@ setInterval(() => {
 }, 10000); // 每10秒检查一次
 
 onBeforeUnmount(() => {
+    // 保存当前所有聊天的消息到本地存储
+    Object.keys(chatMessages.value).forEach(chatId => {
+        const messages = chatMessages.value[chatId]
+        if (messages && messages.length > 0) {
+            saveMessagesToStorage(chatId, messages)
+        }
+    })
+    
     closeWebSocket()
     // 清理ACK管理器
     ackManager.destroy()
@@ -942,6 +1034,13 @@ function insertEmoji(emoji) {
 }
 onBeforeUnmount(() => {
     document.removeEventListener('mousedown', handleClickOutside)
+    // 清理拖拽事件监听器
+    if (isResizing.value) {
+        document.removeEventListener('mousemove', handleResize)
+        document.removeEventListener('mouseup', stopResize)
+        document.body.style.userSelect = ''
+        document.body.style.cursor = ''
+    }
 })
 
 // 图片预览函数
@@ -979,6 +1078,41 @@ function closeVoicePlayer() {
     currentVoiceUrl.value = ''
     currentVoiceSender.value = ''
     currentVoiceDuration.value = 0
+}
+
+// 拖拽调整大小功能
+function startResize(event) {
+    event.preventDefault()
+    isResizing.value = true
+    startY.value = event.clientY
+    startHeight.value = textareaRef.value.offsetHeight
+    
+    document.addEventListener('mousemove', handleResize)
+    document.addEventListener('mouseup', stopResize)
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'ns-resize'
+}
+
+function handleResize(event) {
+    if (!isResizing.value) return
+    
+    const deltaY = startY.value - event.clientY // 向上拖拽为正值
+    const newHeight = startHeight.value + deltaY
+    
+    // 限制最小和最大高度
+    const minHeight = 40
+    const maxHeight = 300
+    const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight))
+    
+    textareaRef.value.style.height = clampedHeight + 'px'
+}
+
+function stopResize() {
+    isResizing.value = false
+    document.removeEventListener('mousemove', handleResize)
+    document.removeEventListener('mouseup', stopResize)
+    document.body.style.userSelect = ''
+    document.body.style.cursor = ''
 }
 
 // ACK相关方法
@@ -1361,21 +1495,54 @@ watch(() => document.hidden, (hidden) => {
     background: var(--bg-hover, #e6f7ff);
 }
 
-.input-area .msg-textarea {
+.textarea-container {
     flex: 1;
+    position: relative;
+    margin-right: 8px;
+}
+
+.resize-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: transparent;
+    cursor: ns-resize;
+    z-index: 10;
+    border-radius: 4px 4px 0 0;
+    transition: background-color 0.2s;
+}
+
+.resize-handle:hover {
+    background: var(--accent-color, #42b983);
+    opacity: 0.3;
+}
+
+.resize-handle:active {
+    background: var(--accent-color, #42b983);
+    opacity: 0.6;
+}
+
+.input-area .msg-textarea {
+    width: 100%;
     padding: 8px;
     border: 1px solid var(--border-color, #ccc);
     border-radius: 4px;
-    margin-right: 8px;
     min-width: 0;
     min-height: 100px;
-    max-height: 200px;
+    max-height: 300px;
     resize: none;
     font-size: 16px;
     line-height: 1.5;
     overflow-y: auto;
     box-sizing: border-box;
-    transition: height 0.2s;
+    transition: border-color 0.2s;
+}
+
+.input-area .msg-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color, #42b983);
 }
 
 .input-area button {

@@ -1,7 +1,7 @@
 <template>
     <div class="left-list">
         <div class="my-info">
-            <div class="my-avatar">
+            <div class="my-avatar" @click="showUserInfo = true" title="点击查看用户信息">
                 <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="" width="50" height="50">
                     <mask id="«R47rrlb»" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
                         <rect width="36" height="36" rx="72" fill="#FFFFFF"></rect>
@@ -21,31 +21,83 @@
             <div class="my-name">{{ myName }}</div>
             <div class="my-uuid">{{ MYUUID }}</div>
         </div>
+        
+        <!-- 用户信息弹出框 -->
+        <div v-if="showUserInfo" class="user-info-popup" @click="showUserInfo = false">
+            <div class="user-info-content" @click.stop>
+                <div class="user-info-header">
+                    <h3>用户信息</h3>
+                    <button class="close-btn" @click="showUserInfo = false">×</button>
+                </div>
+                <div class="user-info-body">
+                    <div class="user-info-item">
+                        <label>用户名:</label>
+                        <span>{{ myName }}</span>
+                    </div>
+                    <div class="user-info-item">
+                        <label>UUID:</label>
+                        <span>{{ MYUUID }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-separator"></div>
         <div class="nav-list">
-            <div class="nav-item" :class="{ active: navTab === 'friend' }" @click="handleNavClick('friend')">
-                <span class="nav-icon"></span> 好友
+            <div class="nav-item-wrapper">
+                <div class="nav-indicator" :class="{ active: navTab === 'friend' }"></div>
+                <div class="nav-item" :class="{ active: navTab === 'friend' }" @click="handleNavClick('friend')" title="好友">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
             </div>
-            <div class="nav-item" :class="{ active: navTab === 'group' }" @click="handleNavClick('group')">
-                <span class="nav-icon"></span> 群组
+            <div class="nav-item-wrapper">
+                <div class="nav-indicator" :class="{ active: navTab === 'group' }"></div>
+                <div class="nav-item" :class="{ active: navTab === 'group' }" @click="handleNavClick('group')" title="群组">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A3.01 3.01 0 0 0 17.1 7H16c-.8 0-1.54.37-2.03.97L12 10l-1.97-2.03A2.996 2.996 0 0 0 8 7H6.9c-1.3 0-2.44.84-2.86 2.37L1.5 16H4v6h16z"/>
+                    </svg>
+                </div>
             </div>
-            <div class="nav-item" :class="{ active: navTab === 'moment' }" @click="handleNavClick('moment')">
-                <span class="nav-icon"></span>此刻
-                <div v-if="hasUnreadMoments" class="moment-notification-dot"></div>
+            <div class="nav-item-wrapper">
+                <div class="nav-indicator" :class="{ active: navTab === 'moment' }"></div>
+                <div class="nav-item" :class="{ active: navTab === 'moment' }" @click="handleNavClick('moment')" title="此刻">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                    <div v-if="hasUnreadMoments" class="moment-notification-dot"></div>
+                </div>
             </div>
-            <div class="nav-item" @click="showSettings = true"><span class="nav-icon"></span>设置</div>
+            <div class="nav-item-wrapper">
+                <div class="nav-indicator"></div>
+                <div class="nav-item" @click="showSettings = true" title="设置">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                </div>
+            </div>
         </div>
     </div>
     <div class="activated-list">
         <div v-if="navTab === 'friend'">
-            <div class="friend-list-title-row">
-                <div class="friend-list-title">好友</div>
-                <button class="add-friend-btn" @click="showAddFriend = true">添加好友</button>
+            <!-- 添加好友项，置顶显示 -->
+            <div class="friend-item add-friend-item" @click="showAddFriend = true">
+                <div class="friend-avatar add-friend-avatar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 11H13V4a1 1 0 0 0-2 0v7H4a1 1 0 0 0 0 2h7v7a1 1 0 0 0 2 0v-7h7a1 1 0 0 0 0-2z"/>
+                    </svg>
+                </div>
+                <div class="friend-info">
+                    <div class="friend-name">添加好友</div>
+                    <div class="friend-uuid">搜索用户名来添加好友</div>
+                </div>
             </div>
+            
             <div v-if="showAddFriend" class="add-friend-dialog">
-                <input v-model="newFriendName" placeholder="Username" class="add-friend-input"
+                <input v-model="newFriendName" placeholder="邮箱/用户名" class="add-friend-input"
                     @keyup.enter="searchFriend" />
-                <button class="add-friend-confirm" @click="searchFriend" :disabled="searching">Search</button>
-                <button class="add-friend-cancel" @click="cancelAddFriend">Cancel</button>
+                <button class="add-friend-confirm" @click="searchFriend" :disabled="searching">搜索</button>
+                <button class="add-friend-cancel" @click="cancelAddFriend">取消</button>
             </div>
             <div v-if="showAddFriend && (searchResults.length > 0 || searchError)" class="search-result-list">
                 <div v-if="searchError" class="search-error">{{ searchError }}</div>
@@ -448,6 +500,7 @@ const sessionKey = route.query.session || 'default'
 const userinfo = ref({})
 const token = localStorage.getItem(`${sessionKey}`)
 const navTab = ref('friend') // 当前左侧tab，默认展示好友
+const showUserInfo = ref(false) // 控制用户信息弹出框显示
 const showAddFriend = ref(false)
 const newFriendName = ref('')
 const searchResults = ref([])
@@ -695,6 +748,7 @@ async function joinGroup() {
             },
             body: JSON.stringify({
                 group_name: name,
+                group_uuid: group_uuid
             })
         })
 
@@ -1267,29 +1321,48 @@ async function getCommentList(moment) {
 }
 
 .left-list {
-    width: 120px;
-    background: var(--bg-secondary, #fff);
-    border-right: 1px solid var(--border-color, #eee);
+    width: 72px;
+    background: #202225;
+    border-right: none;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 0 8px 0;
+    padding: 12px 0;
+    box-shadow: 0 0 0 1px rgba(4,4,5,0.15);
 }
 
 .my-info {
     width: 100%;
-    padding: 16px 0 8px 0;
-    /* border-bottom: 1px solid var(--border-color, #eee); */
-    /* background: var(--bg-tertiary, #f7f7f7); */
+    padding: 0;
     margin-bottom: 8px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .my-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #5865f2;
     display: flex;
     justify-content: center;
     align-items: center;
     margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-radius 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.my-avatar:hover {
+    border-radius: 16px;
+}
+
+.my-avatar svg {
+    width: 32px;
+    height: 32px;
 }
 
 .avatar-emoji {
@@ -1298,62 +1371,212 @@ async function getCommentList(moment) {
 }
 
 .my-name {
-    font-size: 15px;
-    font-weight: bold;
-    margin-bottom: 2px;
+    display: none;
 }
 
 .my-uuid {
-    font-size: 12px;
-    color: var(--text-secondary, #888);
-    word-break: break-all;
+    display: none;
+}
+
+.nav-separator {
+    width: 32px;
+    height: 2px;
+    background: #36393f;
+    border-radius: 1px;
+    margin: 8px 0;
 }
 
 .nav-list {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nav-item-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.nav-indicator {
+    position: absolute;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    background: #ffffff;
+    border-radius: 0 4px 4px 0;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 1;
+}
+
+.nav-indicator.active {
+    opacity: 1;
+    height: 40px;
 }
 
 .nav-item {
+    width: 48px;
+    height: 48px;
+    background: #36393f;
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    font-size: 16px;
-    padding: 12px 0 12px 0;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.2s;
-    border-radius: 6px;
-    margin: 0 8px 8px 8px;
+    transition: all 0.2s ease;
+    margin: 0 auto;
     position: relative;
+    color: #dcddde;
+    font-size: 20px;
 }
 
 .nav-item:hover {
-    background: var(--nav-hover-bg, #f8f8f8);
+    background: #5865f2;
+    border-radius: 16px;
+    color: #ffffff;
+}
+
+.nav-item-wrapper:hover .nav-indicator:not(.active) {
+    opacity: 1;
+    height: 20px;
+}
+
+.nav-item.active {
+    background: #5865f2;
+    border-radius: 16px;
+    color: #ffffff;
 }
 
 .nav-icon {
-    font-size: 20px;
-    margin-right: 6px;
+    display: none;
 }
 
 .moment-notification-dot {
     position: absolute;
-    top: 8px;
-    right: 20px;
-    width: 8px;
-    height: 8px;
-    background: var(--error-color, #ff4444);
+    top: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: #f23f42;
     border-radius: 50%;
-    border: 2px solid var(--bg-secondary, #fff);
+    border: 4px solid #202225;
+    z-index: 2;
+}
+
+/* 用户信息弹出框样式 */
+.user-info-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.user-info-content {
+    background: #36393f;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+    animation: popupFadeIn 0.2s ease-out;
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.user-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #2f3136;
+}
+
+.user-info-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #b9bbbe;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    background: #f04747;
+    color: #ffffff;
+}
+
+.user-info-body {
+    padding: 20px;
+}
+
+.user-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #2f3136;
+    border-radius: 6px;
+    border-left: 4px solid #5865f2;
+}
+
+.user-info-item:last-child {
+    margin-bottom: 0;
+}
+
+.user-info-item label {
+    color: #b9bbbe;
+    font-weight: 500;
+    font-size: 14px;
+    margin: 0;
+}
+
+.user-info-item span {
+    color: #ffffff;
+    font-weight: 400;
+    font-size: 14px;
+    word-break: break-all;
+    text-align: right;
+    max-width: 60%;
 }
 
 .activated-list {
     width: 380px;
-    background: var(--bg-secondary, #fff);
-    border-right: 1px solid var(--border-color, #eee);
+    background: var(--bg-secondary, #2f3136);
+    border-right: 1px solid var(--border-color, #40444b);
     display: flex;
     flex-direction: column;
-    padding: 0 0 8px 0;
+    padding: 16px 0 8px 0;
+    color: var(--text-primary, #dcddde);
 }
 
 .friend-list-title {
@@ -1442,214 +1665,409 @@ async function getCommentList(moment) {
 .add-friend-dialog {
     display: flex;
     align-items: center;
-    padding: 8px 8px 8px 16px;
-    background: var(--bg-tertiary, #f7f7f7);
-    border-radius: 6px;
-    margin: 8px 8px 0 8px;
+    padding: 16px;
+    background: #36393f;
+    border: 1px solid #40444b;
+    border-radius: 8px;
+    margin: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    gap: 12px;
 }
 
 .add-friend-input {
     flex: 1;
-    padding: 6px 8px;
-    border: 1px solid var(--border-color, #ccc);
-    border-radius: 4px;
+    padding: 10px 12px;
+    background: #40444b;
+    border: 1px solid #40444b;
+    border-radius: 6px;
     font-size: 14px;
-    margin-right: 8px;
+    color: #dcddde;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.add-friend-input::placeholder {
+    color: #72767d;
+}
+
+.add-friend-input:focus {
+    border-color: #5865f2;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+    background: #484c52;
 }
 
 .add-friend-confirm {
-    background: var(--accent-color, #42b983);
-    color: var(--text-primary, #fff);
+    background: linear-gradient(135deg, #5865f2, #7289da);
+    color: #ffffff;
     border: none;
-    border-radius: 4px;
-    padding: 4px 10px;
+    border-radius: 6px;
+    padding: 10px 16px;
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    margin-right: 4px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(88, 101, 242, 0.3);
+}
+
+.add-friend-confirm:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4752c4, #5b6ecd);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.4);
 }
 
 .add-friend-confirm:disabled {
-    background: var(--bg-disabled, #ccc);
+    background: #4f545c;
+    color: #72767d;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .add-friend-cancel {
-    background: var(--bg-tertiary, #eee);
-    color: var(--text-primary, #333);
-    border: none;
-    border-radius: 4px;
-    padding: 4px 10px;
+    background: transparent;
+    color: #b9bbbe;
+    border: 1px solid #4f545c;
+    border-radius: 6px;
+    padding: 10px 16px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-friend-cancel:hover {
+    background: #4f545c;
+    color: #dcddde;
+    border-color: #72767d;
 }
 
 .create-group-dialog {
-    background: var(--bg-tertiary, #f7f7f7);
+    background: #36393f;
+    border: 1px solid #40444b;
     border-radius: 8px;
     margin: 8px;
     padding: 20px;
-    box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.1));
-    max-height: 400px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    max-height: 500px;
     overflow-y: auto;
 }
 
 .create-group-form {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 18px;
 }
 
 .create-group-form .form-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
 }
 
 .create-group-form .form-group label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary, #333);
+    font-size: 14px;
+    font-weight: 600;
+    color: #dcddde;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .create-group-input,
 .create-group-select {
     width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
+    padding: 12px 14px;
+    background: #40444b;
+    border: 1px solid #40444b;
+    border-radius: 6px;
     font-size: 14px;
-    background: var(--bg-secondary, #fff);
-    color: var(--text-primary, #333);
+    color: #dcddde;
+    transition: all 0.2s ease;
+    outline: none;
     box-sizing: border-box;
+}
+
+.create-group-input::placeholder {
+    color: #72767d;
+}
+
+.create-group-input:focus,
+.create-group-select:focus {
+    border-color: #5865f2;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+    background: #484c52;
+}
+
+.create-group-select {
+    cursor: pointer;
+}
+
+.create-group-select option {
+    background: #40444b;
+    color: #dcddde;
 }
 
 .create-group-textarea {
     width: 100%;
-    min-height: 80px;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
+    min-height: 100px;
+    padding: 12px 14px;
+    background: #40444b;
+    border: 1px solid #40444b;
+    border-radius: 6px;
     font-size: 14px;
-    background: var(--bg-secondary, #fff);
-    color: var(--text-primary, #333);
+    color: #dcddde;
     resize: vertical;
     font-family: inherit;
+    transition: all 0.2s ease;
+    outline: none;
     box-sizing: border-box;
+}
+
+.create-group-textarea::placeholder {
+    color: #72767d;
+}
+
+.create-group-textarea:focus {
+    border-color: #5865f2;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+    background: #484c52;
 }
 
 .create-group-form .char-count {
     font-size: 12px;
-    color: var(--text-secondary, #666);
+    color: #72767d;
     text-align: right;
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
 .create-group-form .form-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     justify-content: flex-end;
-    margin-top: 10px;
+    margin-top: 16px;
 }
 
 .create-group-confirm {
-    background: var(--accent-color, #42b983);
-    color: var(--text-primary, #fff);
+    background: linear-gradient(135deg, #5865f2, #7289da);
+    color: #ffffff;
     border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
+    border-radius: 6px;
+    padding: 12px 20px;
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(88, 101, 242, 0.3);
 }
 
 .create-group-confirm:hover:not(:disabled) {
-    background: var(--accent-hover, #369970);
+    background: linear-gradient(135deg, #4752c4, #5b6ecd);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.4);
 }
 
 .create-group-confirm:disabled {
-    background: var(--bg-disabled, #ccc);
+    background: #4f545c;
+    color: #72767d;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .create-group-cancel {
-    background: var(--bg-tertiary, #eee);
-    color: var(--text-primary, #333);
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    padding: 8px 16px;
+    background: transparent;
+    color: #b9bbbe;
+    border: 1px solid #4f545c;
+    border-radius: 6px;
+    padding: 12px 20px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
 }
 
 .create-group-cancel:hover {
-    background: #e0e0e0;
+    background: #4f545c;
+    color: #dcddde;
+    border-color: #72767d;
 }
 
 .add-group-dialog {
     display: flex;
     align-items: center;
-    padding: 8px 8px 8px 16px;
-    background: #f7f7f7;
-    border-radius: 6px;
-    margin: 8px 8px 0 8px;
+    padding: 16px;
+    background: #36393f;
+    border: 1px solid #40444b;
+    border-radius: 8px;
+    margin: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    gap: 12px;
 }
 
 .add-group-input {
     flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 10px 12px;
+    background: #40444b;
+    border: 1px solid #40444b;
+    border-radius: 6px;
     font-size: 14px;
-    margin-right: 8px;
+    color: #dcddde;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.add-group-input::placeholder {
+    color: #72767d;
+}
+
+.add-group-input:focus {
+    border-color: #5865f2;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
+    background: #484c52;
 }
 
 .add-group-confirm {
-    background: #42b983;
-    color: var(--text-primary, #fff);
+    background: linear-gradient(135deg, #5865f2, #7289da);
+    color: #ffffff;
     border: none;
-    border-radius: 4px;
-    padding: 4px 10px;
+    border-radius: 6px;
+    padding: 10px 16px;
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    margin-right: 4px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(88, 101, 242, 0.3);
+}
+
+.add-group-confirm:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4752c4, #5b6ecd);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.4);
 }
 
 .add-group-confirm:disabled {
-    background: #ccc;
+    background: #4f545c;
+    color: #72767d;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .add-group-cancel {
-    background: var(--bg-tertiary, #eee);
-    color: var(--text-primary, #333);
-    border: none;
-    border-radius: 4px;
-    padding: 4px 10px;
+    background: transparent;
+    color: #b9bbbe;
+    border: 1px solid #4f545c;
+    border-radius: 6px;
+    padding: 10px 16px;
     font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-group-cancel:hover {
+    background: #4f545c;
+    color: #dcddde;
+    border-color: #72767d;
 }
 
 .friend-item {
     display: flex;
     align-items: center;
-    padding: 10px 16px;
+    padding: 12px 16px;
     cursor: pointer;
-    border-radius: 4px;
-    margin: 4px 8px;
-    transition: background 0.2s;
-    background: var(--bg-tertiary, #f8f8f8);
+    border-radius: 8px;
+    margin: 2px 8px;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.friend-item:hover {
+    background: var(--bg-tertiary, rgba(79, 84, 92, 0.16));
+    border-color: var(--border-color, rgba(79, 84, 92, 0.24));
+}
+
+.friend-item.active {
+    background: var(--accent-color, rgba(88, 101, 242, 0.1));
+    border-color: var(--accent-color, #5865f2);
+}
+
+.add-friend-item {
+    background: linear-gradient(135deg, #5865f2 0%, #7289da 100%) !important;
+    color: white;
+    margin: 12px 8px 8px 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+    transition: all 0.2s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.add-friend-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.add-friend-item:hover {
+    background: linear-gradient(135deg, #4752c4 0%, #5b6eae 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+}
+
+.add-friend-item:hover::before {
+    opacity: 1;
+}
+
+.add-friend-item .friend-name {
+    color: white;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.add-friend-item .friend-uuid {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+}
+
+.add-friend-avatar {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    backdrop-filter: blur(10px);
 }
 
 .group-item {
     display: flex;
     align-items: center;
-    padding: 10px 16px;
+    padding: 12px 16px;
     cursor: pointer;
-    border-radius: 4px;
-    margin: 4px 8px;
-    transition: background 0.2s;
-    background: var(--bg-tertiary, #f8f8f8);
+    border-radius: 8px;
+    margin: 2px 8px;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.group-item:hover {
+    background: var(--bg-tertiary, rgba(79, 84, 92, 0.16));
+    border-color: var(--border-color, rgba(79, 84, 92, 0.24));
+}
+
+.group-item.active {
+    background: var(--accent-color, rgba(88, 101, 242, 0.1));
+    border-color: var(--accent-color, #5865f2);
 }
 
 .friend-item.active,
@@ -1657,35 +2075,48 @@ async function getCommentList(moment) {
     background: var(--bg-hover, #e6f7ff);
 }
 
-.group-item.active,
-.group-item:hover {
-    background: var(--bg-hover, #e6f7ff);
-}
-
 .friend-avatar {
-    width: 36px;
-    height: 36px;
-    margin-right: 10px;
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: var(--bg-tertiary, #f0f0f0);
+    background: var(--accent-color, #5865f2);
     overflow: hidden;
-    font-size: 24px;
+    font-size: 18px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.friend-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .group-avatar {
-    width: 36px;
-    height: 36px;
-    margin-right: 10px;
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: var(--bg-tertiary, #f0f0f0);
+    background: var(--accent-color, #5865f2);
     overflow: hidden;
-    font-size: 24px;
+    font-size: 18px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.group-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .friend-info {
@@ -1746,11 +2177,12 @@ async function getCommentList(moment) {
 .group-name {
     font-weight: bold;
     font-size: 15px;
+    color: #dcddde;
 }
 
 .group-uuid {
     font-size: 12px;
-    color: var(--text-secondary, #888);
+    color: var(--text-secondary, #72767d);
     word-break: break-all;
 }
 
@@ -1996,8 +2428,9 @@ async function getCommentList(moment) {
 }
 
 .nav-item.active {
-    background: var(--bg-hover, #e6f7ff);
-    color: var(--accent-color, #42b983);
+    background: #5865f2;
+    border-radius: 16px;
+    color: #ffffff;
 }
 
 .search-result-list {
@@ -2730,72 +3163,80 @@ async function getCommentList(moment) {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 60px 20px;
     text-align: center;
-    color: var(--text-secondary, #666);
-    min-height: 200px;
+    color: #72767d;
+    min-height: 300px;
 }
 
 .empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.8;
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.6;
+    filter: grayscale(0.3);
 }
 
 .empty-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
-    color: var(--text-primary, #333);
-    margin-bottom: 8px;
+    color: #dcddde;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
 }
 
 .empty-description {
     font-size: 14px;
-    color: #666;
-    margin-bottom: 24px;
-    line-height: 1.5;
+    color: #72767d;
+    margin-bottom: 32px;
+    line-height: 1.6;
+    max-width: 280px;
 }
 
 .empty-action-btn {
-    background: #42b983;
-    color: var(--text-primary, #fff);
+    background: linear-gradient(135deg, #5865f2, #7289da);
+    color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 10px 20px;
+    padding: 12px 24px;
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
-    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(88, 101, 242, 0.3);
 }
 
 .empty-action-btn:hover {
-    background: #369870;
+    background: linear-gradient(135deg, #4752c4, #5b6ecd);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(66, 185, 131, 0.3);
+    box-shadow: 0 4px 8px rgba(88, 101, 242, 0.4);
 }
 
 .empty-actions {
     display: flex;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
     justify-content: center;
 }
 
 .empty-action-btn.primary {
-    background: #42b983;
+    background: linear-gradient(135deg, #5865f2, #7289da);
 }
 
 .empty-action-btn.primary:hover {
-    background: #369870;
+    background: linear-gradient(135deg, #4752c4, #5b6ecd);
 }
 
 .empty-action-btn.secondary {
-    background: #6c757d;
+    background: transparent;
+    color: #b9bbbe;
+    border: 1px solid #4f545c;
 }
 
 .empty-action-btn.secondary:hover {
-    background: #5a6268;
-    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    background: #4f545c;
+    color: #dcddde;
+    border-color: #72767d;
+    box-shadow: 0 2px 4px rgba(79, 84, 92, 0.3);
 }
 
 /* 评论区滚动条样式 */
