@@ -697,8 +697,6 @@ onMounted(async () => {
     await getFriendList()
     await getGroupList()
     await getMyInfo()
-
-
     // 初始化主题设置
     applyTheme(currentTheme.value)
     applyEyeCareMode()

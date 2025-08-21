@@ -214,15 +214,6 @@
             @call-started="onVideoCallStarted"
             @call-ended="onVideoCallEnded"
         />
-        
-        <!-- 语音消息播放器 -->
-        <VoiceMessagePlayer
-            :show-player="showVoicePlayer"
-            :audio-url="currentVoiceUrl"
-            :sender-name="currentVoiceSender"
-            :voice-duration="currentVoiceDuration"
-            @close="closeVoicePlayer"
-        />
     </div>
 </template>
 
