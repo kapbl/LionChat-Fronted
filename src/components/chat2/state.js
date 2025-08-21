@@ -8,6 +8,7 @@ export const API_BASE_URL_WS = 'ws://localhost:9922'
 // 用户信息全局变量
 export const myName = ref('')
 export const MYUUID = ref('')
+export const myAvatar = ref('😀') // 用户头像，默认为表情符号
 
 export const TOUUID = ref('')
 // 好友列表，头像类型随机
@@ -39,3 +40,6 @@ export const friendResponseInfo = ref({
 })
 // 1 好友 2 群组
 export const currentChatType = ref(1)
+
+// Discord风格导航状态
+export const navTab = ref('friend') // 当前激活的导航标签：friend, group, moment

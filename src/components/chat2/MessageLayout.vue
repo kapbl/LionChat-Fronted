@@ -120,15 +120,6 @@
             @call-started="onVideoCallStarted"
             @call-ended="onVideoCallEnded"
         />
-        
-        <!-- 语音消息播放器 -->
-        <VoiceMessagePlayer
-            :show-player="showVoicePlayer"
-            :audio-url="currentVoiceUrl"
-            :sender-name="currentVoiceSender"
-            :voice-duration="currentVoiceDuration"
-            @close="closeVoicePlayer"
-        />
     </div>
 </template>
 
@@ -140,18 +131,24 @@ import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
 import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
 import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID } from './state.js'
-
 import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
-// import VoiceMessagePlayer from './VoiceMessagePlayer.vue'
 import { ackManager } from './ackManager.js'
 
 const route = useRoute()
 const sessionKey = route.query.session || 'default'
 const messages = computed(() => {
     const msgs = chatMessages.value[TOUUID.value] || []
+    console.log('=== 消息调试信息 ===')
+    console.log('当前聊天对象TOUUID:', TOUUID.value)
+    console.log('chatMessages全部数据:', chatMessages.value)
+    console.log('当前聊天的消息数组:', msgs)
+    console.log('消息数组长度:', msgs.length)
     // 按时间戳排序消息，确保离线消息和实时消息正确排序
-    return msgs.sort((a, b) => a.timestamp - b.timestamp)
+    const sortedMsgs = msgs.sort((a, b) => a.timestamp - b.timestamp)
+    console.log('排序后的消息:', sortedMsgs)
+    console.log('===================')
+    return sortedMsgs
 })
 
 // 监听聊天对象变化，自动标记未读消息为已读
@@ -637,7 +634,7 @@ function reassembleMessage(fragments) {
 
 // 重构后的消息处理函数
 function handleTextMessage(decoded, chatId, isPrivateMessage) {
-    updateUnreadCount(chatId, isPrivateMessage);
+    // updateUnreadCount(chatId, isPrivateMessage);
     addMessageToChat(chatId, decoded);
 }
 
@@ -765,16 +762,30 @@ function updateUnreadCount(chatId, isPrivateMessage) {
     }
 }
 
+// 新增消息到聊天记录
 function addMessageToChat(chatId, decoded) {
+    console.log('=== addMessageToChat调试 ===')
+    console.log('接收到的消息:', decoded)
+    console.log('聊天ID:', chatId)
+    console.log('添加前chatMessages:', JSON.parse(JSON.stringify(chatMessages.value)))
+
     chatMessages.value[chatId] ??= [];
     // 为消息生成唯一ID（如果没有的话）
     if (!decoded.messageId) {
         decoded.messageId = generateMessageId()
     }
-    chatMessages.value[chatId].push({
+    
+    const messageToAdd = {
         ...decoded,
         timestamp: decoded.timestamp || Date.now()
-    });
+    }
+    
+    
+    console.log('准备添加的消息:', messageToAdd)
+    chatMessages.value[chatId].push(messageToAdd);
+    console.log('添加后chatMessages:', JSON.parse(JSON.stringify(chatMessages.value)))
+    console.log('添加后当前聊天消息数量:', chatMessages.value[chatId].length)
+    console.log('==========================')
 }
 
 function getMimeType(fileSuffix) {
@@ -883,6 +894,7 @@ function sendMessage() {
         alert('请先选择聊天对象')
         return
     }
+    console.log(TOUUID.value)
     // 消息体
     const msgObj = {
         avatar: '',
@@ -1070,11 +1082,12 @@ watch(() => document.hidden, (hidden) => {
     margin: 0;
     border: 1px solid var(--border-color, #ddd);
     border-radius: 0;
-    background: var(--bg-primary, #fafafa);
+    background: var(--bg-color);
     display: flex;
     flex-direction: column;
     height: 100vh;
     min-width: 0;
+    position: relative;
 }
 
 .chat-header {
@@ -1082,10 +1095,12 @@ watch(() => document.hidden, (hidden) => {
     line-height: 48px;
     font-size: 18px;
     font-weight: bold;
-    color: var(--text-primary, #333);
+    color: var(--text-primary);
     padding: 0 24px;
-    /* border-bottom: 1px solid var(--border-color, #eee); */
-    /* background: var(--bg-secondary, #f7f7f7); */
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-color);
+    box-shadow: 0 1px 0 var(--border-color);
+    flex-shrink: 0;
 }
 
 .chat-header-center {
@@ -1165,6 +1180,7 @@ watch(() => document.hidden, (hidden) => {
     padding: 16px;
     display: flex;
     flex-direction: column;
+    background: var(--bg-color);
 }
 
 .message {
@@ -1272,8 +1288,8 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .message.self .msg-bubble {
-    background: var(--msg-self-bg, #d1f5d3);
-    color: var(--text-primary, #222);
+    background: var(--accent-color);
+    color: var(--text-primary);
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 16px;
     align-items: flex-end;
@@ -1281,8 +1297,8 @@ watch(() => document.hidden, (hidden) => {
 }
 
 .message.other .msg-bubble {
-    background: var(--msg-other-bg, #e6e6e6);
-    color: var(--text-primary, #222);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 16px;
     align-items: flex-start;
@@ -1324,9 +1340,11 @@ watch(() => document.hidden, (hidden) => {
 .input-area-wrap {
     display: flex;
     flex-direction: column;
-    border-top: 1px solid var(--border-color, #eee);
-    background: var(--bg-secondary, #fff);
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-color);
     position: relative;
+    padding: 16px;
+    flex-shrink: 0;
 }
 
 .input-actions-top {
@@ -1342,8 +1360,11 @@ watch(() => document.hidden, (hidden) => {
 .input-area {
     display: flex;
     padding: 12px 0 2px 0;
-    background: var(--bg-secondary, #fff);
+    background: var(--input-bg);
     align-items: flex-end;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    gap: 8px;
 }
 
 .input-action-btn {
@@ -1363,8 +1384,8 @@ watch(() => document.hidden, (hidden) => {
 
 .input-area .msg-textarea {
     flex: 1;
-    padding: 8px;
-    border: 1px solid var(--border-color, #ccc);
+    padding: 8px 12px;
+    border: none;
     border-radius: 4px;
     margin-right: 8px;
     min-width: 0;
@@ -1376,13 +1397,17 @@ watch(() => document.hidden, (hidden) => {
     overflow-y: auto;
     box-sizing: border-box;
     transition: height 0.2s;
+    background: transparent;
+    color: var(--text-primary);
+    outline: none;
+    font-family: inherit;
 }
 
 .input-area button {
-    padding: 8px 24px;
+    padding: 8px 20px;
     border: none;
-    background: var(--accent-color, #42b983);
-    color: var(--text-primary, #fff);
+    background: var(--accent-color);
+    color: var(--text-primary);
     border-radius: 4px;
     cursor: pointer;
     white-space: nowrap;
@@ -1391,10 +1416,11 @@ watch(() => document.hidden, (hidden) => {
     position: absolute;
     right: 16px;
     bottom: 12px;
-    height: 40px;
-    padding: 8px 20px;
     margin: 0;
-
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
 }
 
 .input-area button:hover {

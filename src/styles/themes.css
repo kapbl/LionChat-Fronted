@@ -1,25 +1,32 @@
 /* 全局主题样式 */
 
-/* CSS变量定义 */
+/* CSS变量定义 - 默认为Discord深色主题 */
 :root {
-  /* 浅色主题 */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #e9ecef;
-  --text-primary: #212529;
-  --text-secondary: #6c757d;
-  --text-muted: #adb5bd;
-  --border-color: #dee2e6;
-  --shadow: rgba(0, 0, 0, 0.1);
-  --accent-color: #42b983;
-  --accent-hover: #369870;
-  --message-self: #d1f5d3;
-  --message-other: #e6e6e6;
-  --input-bg: #ffffff;
-  --input-border: #ced4da;
+  /* Discord深色主题作为默认 */
+  --bg-primary: #36393f;
+  --bg-secondary: #2f3136;
+  --bg-tertiary: #202225;
+  --text-primary: #dcddde;
+  --text-secondary: #b9bbbe;
+  --text-muted: #72767d;
+  --border-color: #40444b;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --accent-color: #5865f2;
+  --accent-hover: #4752c4;
+  --message-self: #5865f2;
+  --message-other: #40444b;
+  --input-bg: #40444b;
+  --input-border: #202225;
+  --nav-hover-bg: #393c43;
+  --server-bg: #202225;
+  --channel-bg: #2f3136;
+  --error-color: #ed4245;
+  --success-color: #3ba55d;
+  --warning-color: #faa61a;
+  --bg-hover: #4752c4;
 }
 
-/* 深色主题 */
+/* Discord深色主题 */
 .dark-theme {
   --bg-primary: #36393f;
   --bg-secondary: #2f3136;
@@ -36,6 +43,12 @@
   --input-bg: #40444b;
   --input-border: #202225;
   --bg-hover: #4752c4;
+  --nav-hover-bg: #393c43;
+  --server-bg: #202225;
+  --channel-bg: #2f3136;
+  --error-color: #ed4245;
+  --success-color: #3ba55d;
+  --warning-color: #faa61a;
 }
 
 /* 护眼主题 */
