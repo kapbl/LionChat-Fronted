@@ -155,6 +155,8 @@ const messageStorage = getMessageStorage(sessionKey)
 
 const messages = computed(() => {
     const msgs = chatMessages.value[TOUUID.value] || []
+    loadMessagesFromStorage(TOUUID.value)
+
     // 按时间戳排序消息，确保离线消息和实时消息正确排序
     return msgs.sort((a, b) => a.timestamp - b.timestamp)
 })
@@ -184,10 +186,17 @@ watch(chatMessages, (newMessages, oldMessages) => {
     })
 }, { deep: true })
 
+// 根据用户ID获取好友姓名
+function getFriendNameById(userId) {
+    const friend = friends.value.find(f => f.uuid === userId)
+    return friend ? friend.name : null
+}
+
 // 保存消息到本地存储
 function saveMessagesToStorage(chatId, messages) {
+    console.log('saveMessagesToStorage', chatId, messages)
+
     if (!chatId || !Array.isArray(messages)) return
-    
     try {
         messageStorage.saveChatMessages(chatId, messages)
         console.log(`已保存聊天 ${chatId} 的 ${messages.length} 条消息到本地存储`)
@@ -481,7 +490,7 @@ async function getOfflineMessages() {
                     to: message.receive_id,
                     content: message.content,
                     contentType: 1, // 假设都是文本消息
-                    fromUsername: '离线消息', // 可以根据需要获取用户名
+                    fromUsername: getFriendNameById(message.sender_id) || '未知用户',
                     timestamp: new Date(message.created_at).getTime(),
                     isRead: message.status === 1
                 }
@@ -528,7 +537,6 @@ async function markMessagesAsRead(messageIds) {
             console.error('No token found for session:', sessionKey)
             return
         }
-        
         const resp = await fetch(`http://localhost:9922/v1/api/message/markAsRead`, {
             method: 'POST',
             headers: {
@@ -541,11 +549,8 @@ async function markMessagesAsRead(messageIds) {
         })
         
         const data = await resp.json()
-        console.log('标记已读响应:', data)
-        
         if (data.code === 200) {
             console.log(`成功标记 ${messageIds.length} 条消息为已读`)
-            
             // 更新本地消息状态
             Object.keys(chatMessages.value).forEach(chatId => {
                 chatMessages.value[chatId].forEach(msg => {
@@ -553,6 +558,13 @@ async function markMessagesAsRead(messageIds) {
                         msg.isRead = true
                     }
                 })
+            })
+            // 将消息存储到本地
+            Object.keys(chatMessages.value).forEach(chatId => {
+                const messages = chatMessages.value[chatId]
+                if (messages && messages.length > 0) {
+                    saveMessagesToStorage(chatId, messages)
+                }
             })
         } else {
             console.error('标记消息已读失败:', data.message)

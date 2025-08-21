@@ -276,6 +276,11 @@ class MessageStorageManager {
             // 清理消息对象，移除不必要的字段
             const cleanMsg = { ...msg }
             
+            // 确保messageId是字符串，避免大整数精度丢失
+            if (cleanMsg.messageId && typeof cleanMsg.messageId !== 'string') {
+                cleanMsg.messageId = String(cleanMsg.messageId)
+            }
+            
             // 移除可能很大的二进制数据（如果已经有URL）
             if (cleanMsg.url && cleanMsg.file) {
                 delete cleanMsg.file
