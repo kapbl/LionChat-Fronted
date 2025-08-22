@@ -62,8 +62,9 @@
             <div class="nav-item-wrapper">
                 <div class="nav-indicator" :class="{ active: navTab === 'moment' }"></div>
                 <div class="nav-item" :class="{ active: navTab === 'moment' }" @click="handleNavClick('moment')" title="此刻">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    <svg width="24" height="24" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                        <path d="M480.7 438c64.1 21.4 142.8-22 168.6-92.1l60.1-163.2c25.8-70.1-26.9-103.8-93.8-70.6l-19.9 23c-66.8 33.2-138.4 106-159 161.9-20.5 55.7-32.2 101.4 23.7 121.9l20.3 19.1zM430.3 557.1c31.5-63.1-17.8-156.4-87.9-182.2l-163.2-60.1c-70.1-25.8-101.9 32.8-68.7 99.6l21.1 14c33.2 66.8 106 138.4 161.9 159 55.8 20.5 102.3 36.4 122.9-19.5l13.9-10.8zM912.7 622.6L887.1 602c-33.2-66.8-106-138.4-161.8-159-55.8-20.5-115.9-19.5-138.5 35.6-27.9 68 19.6 151.2 89.6 177l163.2 60.1c70.1 25.8 108.4-16.9 75.1-83.8l-2-9.3zM548.7 591.6C489.4 566 399.6 608 373.8 678l-60.1 163.2c-25.8 70.1 26.2 104.4 93 71.2l20.6-23.5c66.8-33.2 138.4-106 159-161.9 20.5-55.8 28.1-104-27.8-124.5l-9.8-10.9z"/>
+                        <path d="M474.2 435.9c55.8 20.5 122.6-19.9 148.4-90l60.1-163.2c25.8-70.1-7.8-100.2-74.6-67l-39 19.5c-66.8 33.2-138.4 106-159 161.9-20.6 55.7 8.2 118.3 64.1 138.8zM432.4 551.8c20.5-55.8-19.9-122.6-90-148.4l-163.2-60.1c-70.1-25.8-100.2 7.8-67 74.6l19.4 39c33.2 66.8 106 138.4 161.9 159 55.8 20.6 118.4-8.2 138.9-64.1zM907.4 611L888 572c-33.2-66.8-106-138.4-161.8-159-55.8-20.5-118.3 8.3-138.9 64.1-20.5 55.8 19.9 122.6 90 148.4l163.2 60.1c70.1 25.8 100.2-7.8 66.9-74.6zM544.9 590.1c-55.8-20.5-122.6 19.9-148.4 90l-60.1 163.2c-25.8 70.1 7.8 100.2 74.6 67l39-19.4c66.8-33.2 138.4-106 159-161.9 20.6-55.8-8.2-118.3-64.1-138.9z"/>
                     </svg>
                     <div v-if="hasUnreadMoments" class="moment-notification-dot"></div>
                 </div>
@@ -139,6 +140,33 @@
                     <span class="search-nickname">{{ f.nickname || f.username }}</span>
                     <span class="search-uuid">({{ f.email }})</span>
                     <span class="search-add">点击添加</span>
+                </div>
+            </div>
+
+            <!-- 好友请求项，当有好友请求时显示在列表第一个位置 -->
+            <div v-if="showFriendRequest" class="friend-item friend-request-item" @click="toggleFriendRequestDetails">
+                <div class="friend-avatar friend-request-avatar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        <circle cx="18" cy="6" r="3" fill="#ff4444"/>
+                        <text x="18" y="8" text-anchor="middle" fill="white" font-size="8">!</text>
+                    </svg>
+                </div>
+                <div class="friend-info">
+                    <div class="friend-name">好友请求</div>
+                    <div class="friend-uuid">来自：{{ friendRequestInfo.fromUsername }}</div>
+                </div>
+                <div class="friend-request-indicator">1</div>
+            </div>
+
+            <!-- 好友请求详情展开区域 -->
+            <div v-if="showFriendRequest && showFriendRequestDetails" class="friend-request-details">
+                <div class="request-content">
+                    <div class="request-message">{{ friendRequestInfo.content }}</div>
+                    <div class="request-actions">
+                        <button @click="handleFriendRequest(true)" class="accept-btn">接受</button>
+                        <button @click="handleFriendRequest(false)" class="reject-btn">拒绝</button>
+                    </div>
                 </div>
             </div>
 
@@ -339,7 +367,7 @@
                     </div>
                 </div>
                 <div v-if="moments.length === 0" class="empty-moments">
-                    <div class="empty-icon">📝</div>
+                    <div class="empty-icon"><img src="@/assets/设备动态.svg" alt="设备动态" width="24" height="24" /></div>
                     <div class="empty-text">还没有动态，快来发布第一条吧！</div>
                 </div>
             </div>
@@ -400,17 +428,7 @@
                 </div>
             </div>
         </div>
-        <div v-if="showFriendRequest" class="friend-request-overlay">
-            <div class="friend-request-dialog">
-                <h3>好友请求</h3>
-                <p>来自：{{ friendRequestInfo.fromUsername }}</p>
-                <p>留言：{{ friendRequestInfo.content }}</p>
-                <div class="request-buttons">
-                    <button @click="handleFriendRequest(true)" class="accept-btn">接受</button>
-                    <button @click="handleFriendRequest(false)" class="reject-btn">拒绝</button>
-                </div>
-            </div>
-        </div>
+        <!-- 好友请求现在显示在好友列表中，不再使用弹出框 -->
         <div v-if="showFriendReplyRequest" class="friend-response-overlay">
             <div class="friend-response-dialog">
                 <h3>好友请求回复</h3>
@@ -647,6 +665,9 @@ const showFriendMessageDialog = ref(false)
 const friendMessage = ref('')
 const selectedFriendToAdd = ref(null)
 
+// 好友请求详情展开控制
+const showFriendRequestDetails = ref(false)
+
 // Toast 相关变量
 const showToast = ref(false)
 const toastMessage = ref('')
@@ -697,8 +718,6 @@ onMounted(async () => {
     await getFriendList()
     await getGroupList()
     await getMyInfo()
-
-
     // 初始化主题设置
     applyTheme(currentTheme.value)
     applyEyeCareMode()
@@ -961,6 +980,11 @@ function saveUnreadCounts() {
     })
     localStorage.setItem(`unreadCounts_${sessionKey}`, JSON.stringify(unreadCounts))
 }
+// 切换好友请求详情显示
+function toggleFriendRequestDetails() {
+    showFriendRequestDetails.value = !showFriendRequestDetails.value
+}
+
 // 添加处理好友请求的方法
 async function handleFriendRequest(isAccept) {
     console.log(friendRequestInfo.value)
@@ -977,10 +1001,19 @@ async function handleFriendRequest(isAccept) {
                 target_username: friendRequestInfo.value.fromUsername
             })
         });
+        
+        if (isAccept) {
+            showToastMessage('已接受好友请求', 'success');
+            // 刷新好友列表
+            await getFriendList();
+        } else {
+            showToastMessage('已拒绝好友请求', 'info');
+        }
     } catch (e) {
         showToastMessage('操作失败: ' + e.message, 'error');
     } finally {
         showFriendRequest.value = false;
+        showFriendRequestDetails.value = false;
     }
 }
 
@@ -1293,15 +1326,17 @@ async function getMomentList() {
         })
         const data = await resp.json()
         if (data.code === 0) {
-            moments.value = data.data.map(item => ({
-                moment_id: item.moment_id,
-                user_id: item.user_id,
-                author: item.username,
-                content: item.content,
-                likes: item.like_count,
-                comments: item.comment_list,
-                timestamp: item.create_time,
-            }))
+            if (data.data) {
+                moments.value = data.data.map(item => ({
+                    moment_id: item.moment_id,
+                    user_id: item.user_id,
+                    author: item.username,
+                    content: item.content,
+                    likes: item.like_count,
+                    comments: item.comment_list,
+                    timestamp: item.create_time,
+                }))
+            }
         }
     } catch (e) {
         showToastMessage('获取动态列表失败: ' + e.message, 'error')
@@ -2300,15 +2335,14 @@ function formatDeadline(deadline) {
 
 .friend-item.active {
     background: var(--accent-color, rgba(88, 101, 242, 0.1));
-    border-color: var(--accent-color, #5865f2);
 }
 
 .add-friend-item {
-    background: linear-gradient(135deg, #5865f2 0%, #7289da 100%) !important;
+    /* background: linear-gradient(135deg, #5865f2 0%, #7289da 100%) !important; */
     color: white;
     margin: 12px 8px 8px 8px;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+    /* box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3); */
     transition: all 0.2s ease;
     border: none;
     position: relative;
@@ -2359,6 +2393,156 @@ function formatDeadline(deadline) {
     backdrop-filter: blur(10px);
 }
 
+/* 好友请求项样式 */
+.friend-request-item {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+    color: white;
+    margin: 12px 8px 8px 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    transition: all 0.2s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.friend-request-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.friend-request-item:hover {
+    background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+.friend-request-item:hover::before {
+    opacity: 1;
+}
+
+.friend-request-item .friend-name {
+    color: white;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.friend-request-item .friend-uuid {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+}
+
+.friend-request-avatar {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    backdrop-filter: blur(10px);
+}
+
+.friend-request-indicator {
+    background: #ffffff;
+    color: #ff6b6b;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+/* 好友请求详情展开区域样式 */
+.friend-request-details {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    border-radius: 8px;
+    margin: 0 8px 8px 8px;
+    padding: 16px;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.request-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.request-message {
+    color: var(--text-primary, #dcddde);
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 8px 12px;
+    background: var(--bg-secondary, rgba(79, 84, 92, 0.3));
+    border-radius: 6px;
+    border-left: 3px solid #ff6b6b;
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.request-actions .accept-btn {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.request-actions .accept-btn:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.request-actions .reject-btn {
+    background: transparent;
+    color: #b9bbbe;
+    border: 1px solid #4f545c;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.request-actions .reject-btn:hover {
+    background: #4f545c;
+    color: #dcddde;
+    border-color: #72767d;
+}
+
 .group-item {
     display: flex;
     align-items: center;
@@ -2378,13 +2562,9 @@ function formatDeadline(deadline) {
 
 .group-item.active {
     background: var(--accent-color, rgba(88, 101, 242, 0.1));
-    border-color: var(--accent-color, #5865f2);
 }
 
-.friend-item.active,
-.friend-item:hover {
-    background: var(--bg-hover, #e6f7ff);
-}
+
 
 .friend-avatar {
     width: 40px;

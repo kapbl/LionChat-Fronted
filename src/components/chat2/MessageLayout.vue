@@ -1,9 +1,25 @@
 <template>
     <div class="chat-container">
         <div class="chat-header chat-header-center">
-            <span v-if="currentChatName">{{ currentChatName }}</span>
-            <span v-else>###</span>
+            <div class="header-title-section">
+                <span v-if="currentChatName" class="chat-title">{{ currentChatName }}</span>
+                <span v-else class="chat-title">###</span>
+                <!-- 群聊成员信息显示 -->
+                <div v-if="currentChatName && currentChatType === 2" class="group-member-info">
+                    <span class="member-count">
+                        在线 {{ groupMemberInfo.onlineCount }} | 离线 {{ groupMemberInfo.offlineCount }}
+                    </span>
+                </div>
+            </div>
             <div v-if="currentChatName" class="header-actions">
+                <!-- 群聊查看群消息按钮 -->
+                <button v-if="currentChatType === 2" @click="showGroupMessages" class="group-messages-btn" title="查看群消息">
+                    <svg width="20" height="20" viewBox="0 0 1055 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M579.107188 899.691186a358.145837 358.145837 0 0 1-8.172455 75.715395 324.734916 324.734916 0 0 1-13.941247 48.073266H85.635106a103.357523 103.357523 0 0 1-14.662346 0 84.849316 84.849316 0 0 1-69.706237-98.30983 450.686875 450.686875 0 0 1 273.056155-339.877995 335.070669 335.070669 0 0 1-50.47693-41.34301 356.463272 356.463272 0 0 1 355.26144 356.944005z" fill="currentColor"></path>
+                        <path d="M887.977927 494.673914a24.036633 24.036633 0 0 1-13.220149-3.845861 24.036633 24.036633 0 0 1-6.730257-33.170554 212.483839 212.483839 0 0 0-212.483839-326.177115 24.036633 24.036633 0 0 1-27.642128-19.710039 24.036633 24.036633 0 0 1 19.710039-27.642128 260.316739 260.316739 0 0 1 260.557106 399.729212 24.036633 24.036633 0 0 1-20.190772 10.816485zM981.720797 915.314997h-121.625365a24.036633 24.036633 0 1 1 0-48.073266h121.625365a25.478831 25.478831 0 0 0 25.719197-25.478832 10.816485 10.816485 0 0 0 0-2.644029v-3.365129a317.764293 317.764293 0 0 0-126.913424-201.426987 24.036633 24.036633 0 1 1 28.363228-38.69898 365.356827 365.356827 0 0 1 146.14273 233.876442v12.258683a73.552098 73.552098 0 0 1-73.311731 73.552098z" fill="currentColor"></path>
+                        <path d="M808.176304 1023.479847H85.635106a50.236564 50.236564 0 0 1-14.42198 0 82.926385 82.926385 0 0 1-55.284257-34.612752 84.128217 84.128217 0 0 1-14.662346-63.456712 451.64834 451.64834 0 0 1 273.056155-340.118361 323.773451 323.773451 0 0 1-93.983237-94.704336 317.043194 317.043194 0 1 1 441.552955 92.300672l-2.884396 1.922931a453.811637 453.811637 0 0 1 273.296521 340.358728 103.357523 103.357523 0 0 1 1.201831 14.662346 85.330048 85.330048 0 0 1-85.330048 83.647484z m-722.541198-48.073266h722.541198a37.016415 37.016415 0 0 0 37.256782-37.016416 59.130118 59.130118 0 0 0 0-6.249524 403.334707 403.334707 0 0 0-243.971829-303.342313 48.073267 48.073267 0 0 1-26.680663-62.975979 48.073267 48.073267 0 0 1 14.902713-19.71004 13.700881 13.700881 0 0 1 3.605495-2.884396A269.210293 269.210293 0 1 0 301.243707 91.09884a269.210293 269.210293 0 0 0 0 452.129073 48.073267 48.073267 0 0 1 13.941247 67.302574 48.073267 48.073267 0 0 1-21.873336 18.027475A402.853975 402.853975 0 0 0 49.099423 932.381007a36.05495 36.05495 0 0 0 6.489891 27.401762 36.535683 36.535683 0 0 0 24.036634 15.143079 28.363227 28.363227 0 0 0 6.009158 0.480733z" fill="currentColor"></path>
+                    </svg>
+                </button>
                 <button @click="startVoiceCall" class="voice-call-btn" title="语音通话">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -214,15 +230,6 @@
             @call-started="onVideoCallStarted"
             @call-ended="onVideoCallEnded"
         />
-        
-        <!-- 语音消息播放器 -->
-        <VoiceMessagePlayer
-            :show-player="showVoicePlayer"
-            :audio-url="currentVoiceUrl"
-            :sender-name="currentVoiceSender"
-            :voice-duration="currentVoiceDuration"
-            @close="closeVoicePlayer"
-        />
     </div>
 </template>
 
@@ -391,6 +398,13 @@ const readMessageIds = ref(new Set()) // 已读消息ID集合
 
 // 打字指示器相关
 const showTypingIndicator = ref(false)
+
+// 群聊成员信息
+const groupMemberInfo = ref({
+    onlineCount: 0,
+    offlineCount: 0,
+    totalCount: 0
+})
 const typingUser = ref('')
 const typingTimer = ref(null)
 
@@ -1179,6 +1193,52 @@ function showMoreOptions(msg) {
     }
 }
 
+// 获取群聊成员信息
+async function getGroupMemberInfo(groupId) {
+    try {
+        const token = localStorage.getItem(`${sessionKey}`)
+        if (!token) {
+            console.error('未找到认证令牌')
+            return
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/group/members/${groupId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+
+        if (response.ok) {
+            const data = await response.json()
+            if (data.success && data.data) {
+                const members = data.data.members || []
+                const onlineMembers = members.filter(member => member.isOnline)
+                const offlineMembers = members.filter(member => !member.isOnline)
+                
+                groupMemberInfo.value = {
+                    onlineCount: onlineMembers.length,
+                    offlineCount: offlineMembers.length,
+                    totalCount: members.length
+                }
+                console.log('群聊成员信息更新:', groupMemberInfo.value)
+            }
+        } else {
+            console.error('获取群聊成员信息失败:', response.statusText)
+        }
+    } catch (error) {
+        console.error('获取群聊成员信息出错:', error)
+    }
+}
+
+// 查看群消息功能
+function showGroupMessages() {
+    console.log('查看群消息功能')
+    // 这里可以实现群消息管理功能，比如显示群公告、群文件等
+    alert('群消息管理功能开发中...')
+}
+
 function handleMessageAction(action, msg) {
     switch (action) {
         case '复制消息':
@@ -1335,6 +1395,26 @@ watch(TOUUID, (newUuid, oldUuid) => {
                 ackManager.markChatAsRead(newUuid, currentMessages)
             }
         })
+        
+        // 如果切换到群聊，获取群聊成员信息
+        if (currentChatType.value === 2 && newUuid) {
+            getGroupMemberInfo(newUuid)
+        }
+    }
+})
+
+// 监听聊天类型变化
+watch(currentChatType, (newType) => {
+    if (newType === 2 && TOUUID.value) {
+        // 切换到群聊时获取成员信息
+        getGroupMemberInfo(TOUUID.value)
+    } else if (newType === 1) {
+        // 切换到私聊时重置群聊成员信息
+        groupMemberInfo.value = {
+            onlineCount: 0,
+            offlineCount: 0,
+            totalCount: 0
+        }
     }
 })
 
@@ -1402,15 +1482,60 @@ watch(() => document.hidden, (hidden) => {
     position: relative;
 }
 
-.chat-header-center > span {
+.header-title-section {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     text-align: center;
+}
+
+.chat-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-primary, #333);
+}
+
+.group-member-info {
+    display: flex;
+    align-items: center;
+}
+
+.member-count {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+    font-weight: normal;
 }
 
 .header-actions {
     display: flex;
     gap: 8px;
     align-items: center;
+}
+
+.group-messages-btn {
+    background: var(--accent-color, #42b983);
+    color: var(--text-primary, white);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.group-messages-btn:hover {
+    background: var(--accent-hover, #369870);
+    transform: scale(1.1);
+}
+
+.group-messages-btn:active {
+    transform: scale(0.95);
 }
 
 .voice-call-btn {
