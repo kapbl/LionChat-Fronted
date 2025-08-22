@@ -628,9 +628,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, friends, groups, hasUnreadMoments, currentChatType, myName, MYUUID, API_BASE_URL } from './state.js'
+import { wsConnected } from './websocket.js'
 
 import Toast from '../Toast.vue'
 
@@ -715,14 +716,37 @@ const creatingPlan = ref(false)
 const plans = ref([])
 // const currentChatID = ref(0)
 onMounted(async () => {
-    await getFriendList()
-    await getGroupList()
     await getMyInfo()
     // 初始化主题设置
     applyTheme(currentTheme.value)
     applyEyeCareMode()
     setupThemeListener()
+    
+    // 如果WebSocket已经连接，立即执行API调用
+    if (wsConnected.value) {
+        await loadInitialData()
+    }
 })
+
+// 监听WebSocket连接状态，连接成功后执行API调用
+watch(wsConnected, async (newValue) => {
+    if (newValue) {
+        await loadInitialData()
+    }
+})
+
+// 加载初始数据的函数
+async function loadInitialData() {
+    try {
+        await getFriendList()
+        await getGroupList()
+        await getMyInfo()
+        console.log('初始数据加载完成')
+    } catch (error) {
+        console.error('加载初始数据失败:', error)
+        showToastMessage('加载数据失败，请检查网络连接', 'error')
+    }
+}
 
 // 显示 Toast 提示
 function showToastMessage(message, type = 'info', duration = 3000) {
@@ -1028,6 +1052,8 @@ async function getFriendList() {
         });
 
         const data = await resp.json();
+        console.log(data)
+
         if (data.code == 4444) {
             showToastMessage(data.msg, 'info')
             return

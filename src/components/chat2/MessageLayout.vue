@@ -12,17 +12,35 @@
                 </div>
             </div>
             <div v-if="currentChatName" class="header-actions">
-                <!-- 群聊查看群消息按钮 -->
-                <button v-if="currentChatType === 2" @click="showGroupMessages" class="group-messages-btn" title="查看群消息">
-                    <svg width="20" height="20" viewBox="0 0 1055 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M579.107188 899.691186a358.145837 358.145837 0 0 1-8.172455 75.715395 324.734916 324.734916 0 0 1-13.941247 48.073266H85.635106a103.357523 103.357523 0 0 1-14.662346 0 84.849316 84.849316 0 0 1-69.706237-98.30983 450.686875 450.686875 0 0 1 273.056155-339.877995 335.070669 335.070669 0 0 1-50.47693-41.34301 356.463272 356.463272 0 0 1 355.26144 356.944005z" fill="currentColor"></path>
-                        <path d="M887.977927 494.673914a24.036633 24.036633 0 0 1-13.220149-3.845861 24.036633 24.036633 0 0 1-6.730257-33.170554 212.483839 212.483839 0 0 0-212.483839-326.177115 24.036633 24.036633 0 0 1-27.642128-19.710039 24.036633 24.036633 0 0 1 19.710039-27.642128 260.316739 260.316739 0 0 1 260.557106 399.729212 24.036633 24.036633 0 0 1-20.190772 10.816485zM981.720797 915.314997h-121.625365a24.036633 24.036633 0 1 1 0-48.073266h121.625365a25.478831 25.478831 0 0 0 25.719197-25.478832 10.816485 10.816485 0 0 0 0-2.644029v-3.365129a317.764293 317.764293 0 0 0-126.913424-201.426987 24.036633 24.036633 0 1 1 28.363228-38.69898 365.356827 365.356827 0 0 1 146.14273 233.876442v12.258683a73.552098 73.552098 0 0 1-73.311731 73.552098z" fill="currentColor"></path>
-                        <path d="M808.176304 1023.479847H85.635106a50.236564 50.236564 0 0 1-14.42198 0 82.926385 82.926385 0 0 1-55.284257-34.612752 84.128217 84.128217 0 0 1-14.662346-63.456712 451.64834 451.64834 0 0 1 273.056155-340.118361 323.773451 323.773451 0 0 1-93.983237-94.704336 317.043194 317.043194 0 1 1 441.552955 92.300672l-2.884396 1.922931a453.811637 453.811637 0 0 1 273.296521 340.358728 103.357523 103.357523 0 0 1 1.201831 14.662346 85.330048 85.330048 0 0 1-85.330048 83.647484z m-722.541198-48.073266h722.541198a37.016415 37.016415 0 0 0 37.256782-37.016416 59.130118 59.130118 0 0 0 0-6.249524 403.334707 403.334707 0 0 0-243.971829-303.342313 48.073267 48.073267 0 0 1-26.680663-62.975979 48.073267 48.073267 0 0 1 14.902713-19.71004 13.700881 13.700881 0 0 1 3.605495-2.884396A269.210293 269.210293 0 1 0 301.243707 91.09884a269.210293 269.210293 0 0 0 0 452.129073 48.073267 48.073267 0 0 1 13.941247 67.302574 48.073267 48.073267 0 0 1-21.873336 18.027475A402.853975 402.853975 0 0 0 49.099423 932.381007a36.05495 36.05495 0 0 0 6.489891 27.401762 36.535683 36.535683 0 0 0 24.036634 15.143079 28.363227 28.363227 0 0 0 6.009158 0.480733z" fill="currentColor"></path>
+                <button v-if="currentChatType === 2" @click="showGroupInfoPanel" class="group-messages-btn"
+                    title="查看群信息">
+                    <svg width="20" height="20" viewBox="0 0 1055 1024" version="1.1"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M579.107188 899.691186a358.145837 358.145837 0 0 1-8.172455 75.715395 324.734916 324.734916 0 0 1-13.941247 48.073266H85.635106a103.357523 103.357523 0 0 1-14.662346 0 84.849316 84.849316 0 0 1-69.706237-98.30983 450.686875 450.686875 0 0 1 273.056155-339.877995 335.070669 335.070669 0 0 1-50.47693-41.34301 356.463272 356.463272 0 0 1 355.26144 356.944005z"
+                            fill="currentColor"></path>
+                        <path
+                            d="M887.977927 494.673914a24.036633 24.036633 0 0 1-13.220149-3.845861 24.036633 24.036633 0 0 1-6.730257-33.170554 212.483839 212.483839 0 0 0-212.483839-326.177115 24.036633 24.036633 0 0 1-27.642128-19.710039 24.036633 24.036633 0 0 1 19.710039-27.642128 260.316739 260.316739 0 0 1 260.557106 399.729212 24.036633 24.036633 0 0 1-20.190772 10.816485zM981.720797 915.314997h-121.625365a24.036633 24.036633 0 1 1 0-48.073266h121.625365a25.478831 25.478831 0 0 0 25.719197-25.478832 10.816485 10.816485 0 0 0 0-2.644029v-3.365129a317.764293 317.764293 0 0 0-126.913424-201.426987 24.036633 24.036633 0 1 1 28.363228-38.69898 365.356827 365.356827 0 0 1 146.14273 233.876442v12.258683a73.552098 73.552098 0 0 1-73.311731 73.552098z"
+                            fill="currentColor"></path>
+                        <path
+                            d="M808.176304 1023.479847H85.635106a50.236564 50.236564 0 0 1-14.42198 0 82.926385 82.926385 0 0 1-55.284257-34.612752 84.128217 84.128217 0 0 1-14.662346-63.456712 451.64834 451.64834 0 0 1 273.056155-340.118361 323.773451 323.773451 0 0 1-93.983237-94.704336 317.043194 317.043194 0 1 1 441.552955 92.300672l-2.884396 1.922931a453.811637 453.811637 0 0 1 273.296521 340.358728 103.357523 103.357523 0 0 1 1.201831 14.662346 85.330048 85.330048 0 0 1-85.330048 83.647484z m-722.541198-48.073266h722.541198a37.016415 37.016415 0 0 0 37.256782-37.016416 59.130118 59.130118 0 0 0 0-6.249524 403.334707 403.334707 0 0 0-243.971829-303.342313 48.073267 48.073267 0 0 1-26.680663-62.975979 48.073267 48.073267 0 0 1 14.902713-19.71004 13.700881 13.700881 0 0 1 3.605495-2.884396A269.210293 269.210293 0 1 0 301.243707 91.09884a269.210293 269.210293 0 0 0 0 452.129073 48.073267 48.073267 0 0 1 13.941247 67.302574 48.073267 48.073267 0 0 1-21.873336 18.027475A402.853975 402.853975 0 0 0 49.099423 932.381007a36.05495 36.05495 0 0 0 6.489891 27.401762 36.535683 36.535683 0 0 0 24.036634 15.143079 28.363227 28.363227 0 0 0 6.009158 0.480733z"
+                            fill="currentColor"></path>
                     </svg>
                 </button>
+                <!-- 群聊查看群信息按钮 -->
+                <!-- <button v-if="currentChatType === 2" @click="showGroupInfoPanel" class="group-info-btn" title="查看群信息">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </button> -->
                 <button @click="startVoiceCall" class="voice-call-btn" title="语音通话">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        <path
+                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                        </path>
                     </svg>
                 </button>
                 <button @click="startVideoCall" class="video-call-btn" title="视频通话">
@@ -34,25 +52,30 @@
             </div>
         </div>
         <div class="messages" ref="messagesContainer">
-            <div v-for="(msg, idx) in messages" 
-                 :key="msg.messageId || idx" 
-                 :class="['message', msg.from === MYUUID ? 'self' : 'other']"
-                 :ref="el => registerMessageElement(msg, el)">
+            <div v-for="(msg, idx) in messages" :key="msg.messageId || idx"
+                :class="['message', msg.from === MYUUID ? 'self' : 'other']"
+                :ref="el => registerMessageElement(msg, el)">
                 <div class="msg-bubble" @mouseenter="showMessageActions(msg, idx)" @mouseleave="hideMessageActions">
                     <span class="sender">{{ msg.fromUsername }}：</span>
                     <span v-if="msg.contentType === 2" class="content">
                         📎 文件：<a :href="msg.url" download>{{ msg.content }}</a> ({{ formatFileSize(msg.file?.length) }})
                     </span>
                     <span v-else-if="msg.contentType === 3" class="content">
-                        🖼️ 图片：<img :src="msg.url" style="max-width: 200px; border-radius: 4px; cursor: pointer;" @click="previewImage(msg.url)">
+                        🖼️ 图片：<img :src="msg.url" style="max-width: 200px; border-radius: 4px; cursor: pointer;"
+                            @click="previewImage(msg.url)">
                     </span>
                     <span v-else-if="msg.contentType === 5" class="content">
-                        🎥 视频：<video :src="msg.url" style="max-width: 200px; border-radius: 4px; cursor: pointer;" @click="previewVideo(msg.url)"></video>
+                        🎥 视频：<video :src="msg.url" style="max-width: 200px; border-radius: 4px; cursor: pointer;"
+                            @click="previewVideo(msg.url)"></video>
                     </span>
                     <span v-if="msg.contentType === 4" class="content">
                         🎤 语音消息：
                         <audio :src="msg.url" controls style="vertical-align: middle"></audio>
                         ({{ formatDuration(msg.duration) }})
+                    </span>
+                    <span v-else-if="msg.contentType === 13" class="content">
+                        <img :src="msg.url" class="sticker-message" alt="贴纸"
+                            style="max-width: 120px; max-height: 120px; border-radius: 8px;">
                     </span>
                     <span v-else class="content">{{ msg.content }}</span>
 
@@ -64,11 +87,13 @@
                             <span v-else class="unread-indicator">✓</span>
                         </span>
                     </div>
-                    
+
                     <!-- 消息悬停操作按钮 -->
-                    <div v-if="hoveredMessageIndex === idx" class="message-actions" :class="msg.from === MYUUID ? 'actions-left' : 'actions-right'">
+                    <div v-if="hoveredMessageIndex === idx" class="message-actions"
+                        :class="msg.from === MYUUID ? 'actions-left' : 'actions-right'">
                         <button class="action-btn emoji-btn" @click="showEmojiReaction(msg)" title="表情">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="m9 9 1.5 1.5L9 12"></path>
                                 <path d="m15 9-1.5 1.5L15 12"></path>
@@ -76,14 +101,16 @@
                             </svg>
                         </button>
                         <button class="action-btn ai-btn" @click="askAI(msg)" title="AI">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                                 <path d="M2 17l10 5 10-5"></path>
                                 <path d="M2 12l10 5 10-5"></path>
                             </svg>
                         </button>
                         <button class="action-btn more-btn" @click="showMoreOptions(msg)" title="更多">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <circle cx="12" cy="12" r="1"></circle>
                                 <circle cx="19" cy="12" r="1"></circle>
                                 <circle cx="5" cy="12" r="1"></circle>
@@ -92,7 +119,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 打字指示器 -->
             <div v-if="showTypingIndicator" class="message other">
                 <div class="typing-indicator">
@@ -108,91 +135,116 @@
         <div class="input-area-wrap">
             <div class="input-actions input-actions-top">
                 <button class="input-action-btn" @click="toggleEmojiPanel" title="发送表情">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="m9 9 1.5 1.5L9 12"/>
-                        <path d="m15 9-1.5 1.5L15 12"/>
-                        <path d="M8 15s1.5 2 4 2 4-2 4-2"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="m9 9 1.5 1.5L9 12" />
+                        <path d="m15 9-1.5 1.5L15 12" />
+                        <path d="M8 15s1.5 2 4 2 4-2 4-2" />
                     </svg>
                 </button>
 
                 <input type="file" ref="fileInput" style="display: none" @change="handleFileSelect">
                 <button class="input-action-btn" @click="$refs.fileInput.click()" title="发送文件">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                        <polyline points="14,2 14,8 20,8"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14,2 14,8 20,8" />
                     </svg>
                 </button>
 
                 <button class="input-action-btn" @click="toggleRecording" :class="{ recording: isRecording }"
                     title="语音消息">
-                    <svg v-if="!isRecording" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" x2="12" y1="19" y2="23"/>
-                        <line x1="8" x2="16" y1="23" y2="23"/>
+                    <svg v-if="!isRecording" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" x2="12" y1="19" y2="23" />
+                        <line x1="8" x2="16" y1="23" y2="23" />
                     </svg>
-                    <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="6" height="6" x="9" y="9" rx="1"/>
+                    <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="6" height="6" x="9" y="9" rx="1" />
                     </svg>
                 </button>
 
                 <button class="input-action-btn" @click="openGamePanel" title="游戏">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="20" height="12" x="2" y="6" rx="2"/>
-                        <circle cx="8" cy="12" r="2"/>
-                        <path d="m16 11.5 1 1 4-4"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="12" x="2" y="6" rx="2" />
+                        <circle cx="8" cy="12" r="2" />
+                        <path d="m16 11.5 1 1 4-4" />
                     </svg>
                 </button>
 
                 <button class="input-action-btn" @click="openStickerPanel" title="贴纸">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12.4 2.7c.9-.9 2.5-.9 3.4 0l5.5 5.5c.9.9.9 2.5 0 3.4L16 17l-4 4-7-7 4-4 3.4-5.3z"/>
-                        <path d="M13.5 6.5 17 10"/>
-                        <path d="M10.5 13.5 7 10"/>
-                        <path d="m16 16 2 2"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12.4 2.7c.9-.9 2.5-.9 3.4 0l5.5 5.5c.9.9.9 2.5 0 3.4L16 17l-4 4-7-7 4-4 3.4-5.3z" />
+                        <path d="M13.5 6.5 17 10" />
+                        <path d="M10.5 13.5 7 10" />
+                        <path d="m16 16 2 2" />
                     </svg>
                 </button>
 
                 <button class="input-action-btn" @click="openGifPanel" title="动图">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-                        <circle cx="9" cy="9" r="2"/>
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-                        <path d="M3 7v10a2 2 0 0 0 2 2h14"/>
-                        <path d="M7 7h.01"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                        <path d="M3 7v10a2 2 0 0 0 2 2h14" />
+                        <path d="M7 7h.01" />
                     </svg>
                 </button>
 
                 <button class="input-action-btn" @click="openSchedulePanel" title="预约">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                        <line x1="16" x2="16" y1="2" y2="6"/>
-                        <line x1="8" x2="8" y1="2" y2="6"/>
-                        <line x1="3" x2="21" y1="10" y2="10"/>
-                        <path d="M8 14h.01"/>
-                        <path d="M12 14h.01"/>
-                        <path d="M16 14h.01"/>
-                        <path d="M8 18h.01"/>
-                        <path d="M12 18h.01"/>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                        <line x1="16" x2="16" y1="2" y2="6" />
+                        <line x1="8" x2="8" y1="2" y2="6" />
+                        <line x1="3" x2="21" y1="10" y2="10" />
+                        <path d="M8 14h.01" />
+                        <path d="M12 14h.01" />
+                        <path d="M16 14h.01" />
+                        <path d="M8 18h.01" />
+                        <path d="M12 18h.01" />
                     </svg>
                 </button>
             </div>
             <div v-if="showEmojiPanel" class="emoji-panel" ref="emojiPanelRef">
                 <span v-for="emoji in emojiList" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">{{ emoji
-                    }}</span>
+                }}</span>
+            </div>
+
+            <!-- 贴纸面板 -->
+            <div v-if="showStickerPanel" class="sticker-panel" ref="stickerPanelRef">
+                <div class="sticker-header">选择贴纸</div>
+                <div class="sticker-grid">
+                    <div v-for="sticker in stickerList" :key="sticker.name" class="sticker-item"
+                        @click="selectSticker(sticker)" @mouseenter="showStickerPreview(sticker, $event)"
+                        @mouseleave="hideStickerPreview">
+                        <img :src="sticker.url" :alt="sticker.name" class="sticker-image">
+                    </div>
+                </div>
+
+                <!-- 贴纸预览 -->
+                <div v-if="stickerPreview.show" class="sticker-preview" :style="stickerPreview.style">
+                    <img :src="stickerPreview.url" class="sticker-preview-image">
+                </div>
             </div>
             <div class="input-area">
                 <div class="textarea-container">
                     <div class="resize-handle" @mousedown="startResize" title="拖拽调整大小"></div>
-                    <textarea v-model="input" @keyup.enter="sendMessage" @input="handleInputChange" placeholder="输入消息..." rows="1"
-                        class="msg-textarea" ref="textareaRef" />
+                    <textarea v-model="input" @keyup.enter="sendMessage" @input="handleInputChange"
+                        placeholder="输入消息..." rows="1" class="msg-textarea" ref="textareaRef" />
                 </div>
                 <button @click="sendMessage">发送</button>
             </div>
         </div>
         <div v-if="!wsConnected" class="ws-status">WebSocket 未连接</div>
-        
+
         <!-- 图片预览模态框 -->
         <div v-if="showImagePreview" class="image-preview-modal" @click="closeImagePreview">
             <div class="image-preview-container">
@@ -200,7 +252,7 @@
                 <button class="close-preview-btn" @click="closeImagePreview">×</button>
             </div>
         </div>
-        
+
         <!-- 视频预览模态框 -->
         <div v-if="showVideoPreview" class="video-preview-modal" @click="closeVideoPreview">
             <div class="video-preview-container">
@@ -208,44 +260,75 @@
                 <button class="close-preview-btn" @click="closeVideoPreview">×</button>
             </div>
         </div>
-        
+
         <!-- WebRTC语音通话组件 -->
-        <WebRTCVoiceCall
-            v-if="MessageType"
-            ref="voiceCallRef"
-            :my-uuid="MYUUID"
-            :my-name="myName"
-            :message-type="MessageType"
-            @call-started="onVoiceCallStarted"
-            @call-ended="onVoiceCallEnded"
-        />
-        
+        <WebRTCVoiceCall v-if="MessageType" ref="voiceCallRef" :my-uuid="MYUUID" :my-name="myName"
+            :message-type="MessageType" @call-started="onVoiceCallStarted" @call-ended="onVoiceCallEnded" />
+
         <!-- WebRTC视频通话组件 -->
-        <WebRTCVideoCall
-            v-if="MessageType"
-            ref="videoCallRef"
-            :my-uuid="MYUUID"
-            :my-name="myName"
-            :message-type="MessageType"
-            @call-started="onVideoCallStarted"
-            @call-ended="onVideoCallEnded"
-        />
+        <WebRTCVideoCall v-if="MessageType" ref="videoCallRef" :my-uuid="MYUUID" :my-name="myName"
+            :message-type="MessageType" @call-started="onVideoCallStarted" @call-ended="onVideoCallEnded" />
+
+        <!-- 群信息面板 -->
+        <div v-if="showGroupInfo" class="group-info-panel" @click="closeGroupInfoPanel">
+            <div class="group-info-content" @click.stop>
+                <div class="group-info-header">
+                    <h3>群信息</h3>
+                    <button class="close-btn" @click="closeGroupInfoPanel">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="group-description">
+                    <h3>群组描述：</h3>
+                    <p>{{ groupInfo }}</p>
+                </div>
+                <div class="group-info-body">
+                    <div class="group-basic-info">
+                        <h4>{{ currentChatName }}</h4>
+                        <p class="group-stats">
+                            在线成员：{{ groupMemberInfo.onlineCount }} |
+                            离线成员：{{ groupMemberInfo.offlineCount }} |
+                            总成员：{{ groupMembers.length }}
+                        </p>
+                    </div>
+                    <div class="group-members-section">
+                        <h5>群成员列表</h5>
+                        <div class="members-list">
+                            <div v-for="member in groupMembers" :key="member.uuid" class="member-item">
+                                <div class="member-avatar">
+                                    <div class="avatar-placeholder">{{ member.nickname }}</div>
+                                    <!-- <div :class="['status-indicator', member.isOnline ? 'online' : 'offline']"></div> -->
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-name">{{ member.nickname }}</div>
+                                    <!-- <div class="member-status">{{ member.isOnline ? '在线' : '离线' }}</div> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
-import protobuf from 'protobufjs'
-import { useRoute } from 'vue-router'
-import { formatFileSize } from '@/utils/format'
 import { emojiList } from '@/components/chat2/emoji'
-import { initWebSocket, closeWebSocket, getWebSocket } from '@/components/chat2/websocket'
-import { TOUUID, currentChatTargetName, currentChatID, showFriendRequest, friendRequestInfo, showFriendReplyRequest, friendResponseInfo, chatMessages, friends, groups, currentChatType, myName, MYUUID, initializeChatMessages, API_BASE_URL } from './state.js'
+import { closeWebSocket, getWebSocket, initWebSocket } from '@/components/chat2/websocket'
+import { formatFileSize } from '@/utils/format'
+import protobuf from 'protobufjs'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { API_BASE_URL, MYUUID, TOUUID, chatMessages, currentChatID, currentChatTargetName, currentChatType, friendRequestInfo, friendResponseInfo, friends, groups, initializeChatMessages, myName, showFriendReplyRequest, showFriendRequest } from './state.js'
 
-import { getMessageStorage, loadAllMessages, saveMessages } from './messageStorage.js'
+import { getMessageStorage } from './messageStorage.js'
 
-import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import WebRTCVideoCall from './WebRTCVideoCall.vue'
+import WebRTCVoiceCall from './WebRTCVoiceCall.vue'
 import { ackManager } from './ackManager.js'
 
 const route = useRoute()
@@ -278,7 +361,7 @@ watch(chatMessages, (newMessages, oldMessages) => {
     Object.keys(newMessages).forEach(chatId => {
         const newChatMessages = newMessages[chatId] || []
         const oldChatMessages = (oldMessages && oldMessages[chatId]) || []
-        
+
         // 如果消息数量发生变化，保存到本地存储
         if (newChatMessages.length !== oldChatMessages.length) {
             saveMessagesToStorage(chatId, newChatMessages)
@@ -308,7 +391,7 @@ function saveMessagesToStorage(chatId, messages) {
 // 从本地存储加载消息
 function loadMessagesFromStorage(chatId) {
     if (!chatId) return []
-    
+
     try {
         const messages = messageStorage.loadChatMessages(chatId)
         console.log(`从本地存储加载聊天 ${chatId} 的 ${messages.length} 条消息`)
@@ -323,7 +406,7 @@ function loadMessagesFromStorage(chatId) {
 function loadAllHistoryMessages() {
     try {
         const allMessages = messageStorage.loadAllMessages()
-        
+
         // 合并到当前的chatMessages中
         Object.keys(allMessages).forEach(chatId => {
             const storedMessages = allMessages[chatId]
@@ -338,7 +421,7 @@ function loadAllHistoryMessages() {
                 }
             }
         })
-        
+
         console.log(`成功加载 ${Object.keys(allMessages).length} 个聊天的历史消息`)
     } catch (error) {
         console.error('加载历史消息失败:', error)
@@ -348,13 +431,13 @@ function loadAllHistoryMessages() {
 // 标记当前聊天对话的未读消息为已读
 async function markCurrentChatMessagesAsRead() {
     if (!TOUUID.value) return
-    
+
     const currentMessages = chatMessages.value[TOUUID.value] || []
     const unreadMessageIds = currentMessages
         .filter(msg => !msg.isRead && msg.from !== MYUUID.value) // 只标记别人发送的未读消息
         .map(msg => msg.messageId)
         .filter(id => id) // 过滤掉无效的messageId
-    
+
     if (unreadMessageIds.length > 0) {
         await markMessagesAsRead(unreadMessageIds)
         console.log(`自动标记 ${unreadMessageIds.length} 条消息为已读`)
@@ -399,6 +482,11 @@ const readMessageIds = ref(new Set()) // 已读消息ID集合
 // 打字指示器相关
 const showTypingIndicator = ref(false)
 
+// 群信息面板相关
+const showGroupInfo = ref(false)
+const groupMembers = ref([])
+const groupInfo = ref('')
+
 // 群聊成员信息
 const groupMemberInfo = ref({
     onlineCount: 0,
@@ -418,6 +506,17 @@ const hoveredMessageIndex = ref(-1)
 const showEmojiReactionPanel = ref(false)
 const selectedMessage = ref(null)
 const startHeight = ref(0)
+
+// 贴纸相关
+const showStickerPanel = ref(false)
+const stickerList = ref([])
+const stickerPanelRef = ref(null)
+const stickerPreview = ref({
+    show: false,
+    url: '',
+    style: {}
+})
+
 async function handleFileSelect(event) {
     const file = event.target.files[0]
     if (!file) return
@@ -436,10 +535,10 @@ async function handleFileSelect(event) {
 }
 function sendFileMessage(fileData) {
     if (!MessageType.value || !wsConnected.value) return
-    
+
     let contentType = 2; // 默认为文件类型
     let type = 'file';
-    
+
     // 根据文件后缀判断类型
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
     const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv'];
@@ -450,7 +549,7 @@ function sendFileMessage(fileData) {
         contentType = 5;
         type = 'video';
     }
-    
+
     const msgObj = {
         avatar: '',
         fromUsername: myName.value,
@@ -460,9 +559,8 @@ function sendFileMessage(fileData) {
         contentType: contentType,
         type: type,
         messageType: currentChatType.value,
-
         url: URL.createObjectURL(new Blob([fileData.fileBuffer])),
-        fileSuffix : fileData.suffix,
+        fileSuffix: fileData.suffix,
         file: fileData.fileBuffer,
         messageId: generateMessageId(), // 生成唯一消息ID
         isFragmented: false,
@@ -580,7 +678,7 @@ async function getOfflineMessages() {
             console.error('No token found for session:', sessionKey)
             return
         }
-        
+
         const resp = await fetch(`${API_BASE_URL}/v1/api/message/getUnreadMessage?page=1&limit=50`, {
 
             method: 'GET',
@@ -588,13 +686,13 @@ async function getOfflineMessages() {
                 'Authorization': `Bearer ${token}`
             }
         })
-        
+
         const data = await resp.json()
         console.log('离线消息:', data)
-        
+
         if (data.code === 200 && data.data && data.data.messages) {
             const unreadMessageIds = []
-            
+
             // 处理离线消息
             data.data.messages.forEach(message => {
                 const offlineMsg = {
@@ -607,20 +705,20 @@ async function getOfflineMessages() {
                     timestamp: new Date(message.created_at).getTime(),
                     isRead: message.status === 1
                 }
-                
+
                 // 确定聊天ID（私聊使用发送者ID）
                 const chatId = message.sender_id
-                
+
                 // 添加到聊天记录
                 if (!chatMessages.value[chatId]) {
                     chatMessages.value[chatId] = []
                 }
-                
+
                 // 检查消息是否已存在（避免重复）
-                const exists = chatMessages.value[chatId].some(msg => 
+                const exists = chatMessages.value[chatId].some(msg =>
                     msg.messageId === offlineMsg.messageId
                 )
-                
+
                 if (!exists) {
                     chatMessages.value[chatId].push(offlineMsg)
                     // 收集未读消息ID
@@ -629,9 +727,9 @@ async function getOfflineMessages() {
                     }
                 }
             })
-            
+
             console.log(`成功加载 ${data.data.messages.length} 条离线消息`)
-            
+
             // 自动标记所有未读离线消息为已读
             // if (unreadMessageIds.length > 0) {
             //     await markMessagesAsRead(unreadMessageIds)
@@ -660,7 +758,7 @@ async function markMessagesAsRead(messageIds) {
                 message_ids: messageIds
             })
         })
-        
+
         const data = await resp.json()
         if (data.code === 200) {
             console.log(`成功标记 ${messageIds.length} 条消息为已读`)
@@ -690,7 +788,7 @@ async function markMessagesAsRead(messageIds) {
 onMounted(async () => {
     // 首先初始化并加载历史消息
     await initializeChatMessages(sessionKey)
-    
+
     // 加载 proto
     const root = await protobuf.load('/message.proto')
     MessageType.value = root.lookup('protocol.Message')
@@ -705,15 +803,15 @@ onMounted(async () => {
         })
         ws.addEventListener('close', () => (wsConnected.value = false))
     }
-    
+
     // 如果WebSocket已经连接，立即获取离线消息
     if (wsConnected.value) {
         await getOfflineMessages()
     }
-    
+
     // 初始化ACK管理器
     ackManager.init(MYUUID.value, MessageType.value)
-    
+
     // 监听消息已读确认事件
     window.addEventListener('messagesAcked', handleMessagesAcked)
 })
@@ -722,7 +820,7 @@ const fragmentManager = new Map(); // 存储待重组的分片
 // 处理 WebSocket 消息
 function handleWebSocketMessage(event) {
     if (!MessageType.value) return;
-    
+
     const buffer = new Uint8Array(event.data);
     const decodedBuffer = MessageType.value.decode(buffer);
     var decoded = decodedBuffer;
@@ -772,19 +870,22 @@ function handleWebSocketMessage(event) {
             case 10: // ACK确认消息
                 handleAckMessage(decoded);
                 break;
+            case 13: // 贴纸消息
+                handleStickerMessage(decoded, chatId, isPrivateMessage);
+                break;
             default:
                 break;
-        } 
+        }
         //saveUnreadCounts();
     } catch (e) {
-         console.log("未知消息类型")
+        console.log("未知消息类型")
     }
 }
 
 // 分片消息处理函数
 function handleFragmentedMessage(fragment) {
     const messageId = fragment.messageId;
-    
+
     if (!fragmentManager.has(messageId)) {
         fragmentManager.set(messageId, {
             fragments: new Array(fragment.totalFragments),
@@ -809,7 +910,7 @@ function handleFragmentedMessage(fragment) {
         console.log('消息重组完成:', messageId);
         return completeMessage;
     }
-    
+
     return null;
 }
 
@@ -832,7 +933,7 @@ function reassembleMessage(fragments) {
             offset += fragment.file.length;
         }
     });
-    
+
     // 关键步骤：反序列化protobuf数据恢复原始消息
     try {
         const originalMessage = MessageType.value.decode(serializedData);
@@ -867,6 +968,14 @@ function handleImageMessage(decoded, chatId, isPrivateMessage) {
     updateUnreadCount(chatId, isPrivateMessage);
     addMessageToChat(chatId, decoded);
 }
+
+function handleStickerMessage(decoded, chatId, isPrivateMessage) {
+    // 直接使用content字段中的贴纸URL
+    decoded.url = decoded.content;
+    updateUnreadCount(chatId, isPrivateMessage);
+    addMessageToChat(chatId, decoded);
+}
+
 
 function handleVideoMessage(decoded, chatId, isPrivateMessage) {
     decoded.url = URL.createObjectURL(
@@ -924,7 +1033,7 @@ function startVoiceCall() {
         alert('请先选择聊天对象');
         return;
     }
-    
+
     if (voiceCallRef.value) {
         voiceCallRef.value.startCall(TOUUID.value, currentChatName.value);
     }
@@ -936,7 +1045,7 @@ function startVideoCall() {
         alert('请先选择聊天对象');
         return;
     }
-    
+
     if (videoCallRef.value) {
         videoCallRef.value.startCall(TOUUID.value, currentChatName.value);
     }
@@ -1024,7 +1133,7 @@ function getMimeType(fileSuffix) {
 setInterval(() => {
     const now = Date.now();
     const timeout = 30000; // 30秒超时
-    
+
     for (const [messageId, messageInfo] of fragmentManager.entries()) {
         if (now - messageInfo.timestamp > timeout) {
             console.warn(`清理过期分片: ${messageId}`);
@@ -1041,7 +1150,7 @@ onBeforeUnmount(() => {
             saveMessagesToStorage(chatId, messages)
         }
     })
-    
+
     closeWebSocket()
     // 清理ACK管理器
     ackManager.destroy()
@@ -1060,7 +1169,7 @@ function handleInputChange() {
         hideTypingIndicator()
         return
     }
-    
+
     // 模拟显示打字指示器（在实际应用中，这里应该通过WebSocket发送打字状态给其他用户）
     showTypingIndicatorDemo()
 }
@@ -1071,11 +1180,11 @@ function showTypingIndicatorDemo() {
     if (typingTimer.value) {
         clearTimeout(typingTimer.value)
     }
-    
+
     // 显示打字指示器
     showTypingIndicator.value = true
     typingUser.value = '对方'
-    
+
     // 3秒后自动隐藏
     typingTimer.value = setTimeout(() => {
         hideTypingIndicator()
@@ -1184,7 +1293,7 @@ function showMoreOptions(msg) {
     // 这里可以显示更多操作选项，如复制、转发、删除等
     const options = ['复制消息', '转发消息', '回复消息', '删除消息']
     const choice = prompt(`选择操作:\n${options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`)
-    
+
     if (choice) {
         const index = parseInt(choice) - 1
         if (index >= 0 && index < options.length) {
@@ -1202,24 +1311,25 @@ async function getGroupMemberInfo(groupId) {
             return
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/group/members/${groupId}`, {
+        const response = await fetch(`${API_BASE_URL}/v1/api/group/group-members-List?groupUUID=${groupId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         })
+        const data = await response.json()
+        console.log(data)
 
         if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.data) {
-                const members = data.data.members || []
-                const onlineMembers = members.filter(member => member.isOnline)
-                const offlineMembers = members.filter(member => !member.isOnline)
-                
+            if (data.code === 0 && data.data) {
+                const members = data.data.member || []
+                // const onlineMembers = members.filter(member => member.isOnline)
+                // const offlineMembers = members.filter(member => !member.isOnline)
+
                 groupMemberInfo.value = {
-                    onlineCount: onlineMembers.length,
-                    offlineCount: offlineMembers.length,
+                    // onlineCount: onlineMembers.length,
+                    // offlineCount: offlineMembers.length,
                     totalCount: members.length
                 }
                 console.log('群聊成员信息更新:', groupMemberInfo.value)
@@ -1237,6 +1347,168 @@ function showGroupMessages() {
     console.log('查看群消息功能')
     // 这里可以实现群消息管理功能，比如显示群公告、群文件等
     alert('群消息管理功能开发中...')
+}
+
+// 贴纸相关函数
+function openStickerPanel() {
+    showStickerPanel.value = !showStickerPanel.value
+    if (showStickerPanel.value) {
+        loadStickers()
+        nextTick(() => {
+            document.addEventListener('mousedown', handleStickerClickOutside)
+        })
+    } else {
+        document.removeEventListener('mousedown', handleStickerClickOutside)
+    }
+}
+
+function handleStickerClickOutside(e) {
+    if (stickerPanelRef.value && !stickerPanelRef.value.contains(e.target)) {
+        showStickerPanel.value = false
+        document.removeEventListener('mousedown', handleStickerClickOutside)
+    }
+}
+
+function loadStickers() {
+    // 加载public/tiezhi目录中的贴纸
+    const stickerFiles = [
+        '242099158257925.63881ae888c67.gif',
+        '6d245c158257925.63881ae889a0a.gif',
+        '6d6f29158257925.63881ae88b3b8.gif',
+        '76c530158257925.63881ae87cbee.gif',
+        '8426b5158257925.63881ae88a654.gif',
+        '97565d158257925.63881ae87de15.gif',
+        'ab6b92158257925.63881ae8828b4.gif',
+        'ce3ade158257925.63881ae88529f.gif',
+        'd009e2158257925.63881ae88690c.gif',
+        'd3fe2c158257925.63881ae887e25.gif',
+        'f6ae3d158257925.63881ae8812b4.gif'
+    ]
+
+    stickerList.value = stickerFiles.map(filename => ({
+        name: filename,
+        url: `/tiezhi/${filename}`
+    }))
+}
+
+function selectSticker(sticker) {
+    // 发送贴纸消息
+    sendStickerMessage(sticker)
+    showStickerPanel.value = false
+    document.removeEventListener('mousedown', handleStickerClickOutside)
+}
+
+// 发送贴纸消息
+function sendStickerMessage(sticker) {
+    if (!MessageType.value || !wsConnected.value) return
+    const msgObj = {
+        avatar: '',
+        fromUsername: myName.value,
+        from: MYUUID.value,
+        to: TOUUID.value,
+        content: sticker.url,
+        contentType: 13,
+        type: 'image',
+        messageType: currentChatType.value,
+        url: sticker.url,
+        fileSuffix: '',
+        file: new Uint8Array(),
+        messageId: generateMessageId(), // 生成唯一消息ID
+        isFragmented: false,
+        fragmentIndex: 0,
+        totalFragments: 0,
+        timestamp: Date.now(),
+        checksum: '',
+        ackMessageIds: [],
+        isRead: false,
+        readTimestamp: 0
+    }
+    const messageBuffer = MessageType.value.encode(MessageType.value.create(msgObj)).finish()
+    ws.send(messageBuffer)
+    if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
+    chatMessages.value[TOUUID.value].push({...msgObj,timestamp: Date.now()})
+   
+
+    // // 本地也显示消息
+    // if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
+    // chatMessages.value[TOUUID.value].push({ ...msgObj, timestamp: Date.now() })
+}
+
+// 群信息面板相关函数
+function showGroupInfoPanel() {
+    showGroupInfo.value = true
+    loadGroupMembers()
+}
+
+function closeGroupInfoPanel() {
+    showGroupInfo.value = false
+}
+
+async function loadGroupMembers() {
+    if (!TOUUID.value || currentChatType.value !== 2) return
+    try {
+        const token = localStorage.getItem(`${sessionKey}`)
+        if (!token) {
+            console.error('未找到认证令牌')
+            return
+        }
+
+        const response = await fetch(`${API_BASE_URL}/v1/api/group/group-members-List?groupUUID=${TOUUID.value}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        const data = await response.json()
+        console.log(data.data.description)
+        if (data.code == 0) {
+            groupInfo.value = data.data.description || {}
+            groupMembers.value = data.data.member || []
+            console.log('群成员列表加载成功:', groupMembers.value)
+        } else {
+            console.error('获取群成员列表失败:', response.status)
+
+        }
+        // if (response.ok) {
+        //     if (data.code === 0 && data.data) {
+        //         const members = data.data.member || []
+        //         // const onlineMembers = members.filter(member => member.isOnline)
+        //         // const offlineMembers = members.filter(member => !member.isOnline)
+
+        //         groupMemberInfo.value = {
+        //             // onlineCount: onlineMembers.length,
+        //             // offlineCount: offlineMembers.length,
+        //             totalCount: members.length
+        //         }
+        //         console.log('群聊成员信息更新:', groupMemberInfo.value)
+        //     }
+        // } else {
+        //     console.error('获取群聊成员信息失败:', response.statusText)
+        // }
+    } catch (error) {
+        console.error('获取群聊成员信息出错:', error)
+    }
+}
+
+function showStickerPreview(sticker, event) {
+    const rect = event.target.getBoundingClientRect()
+    const panelRect = stickerPanelRef.value.getBoundingClientRect()
+
+    stickerPreview.value = {
+        show: true,
+        url: sticker.url,
+        style: {
+            position: 'absolute',
+            left: `${rect.left - panelRect.left - 60}px`,
+            top: `${rect.top - panelRect.top - 80}px`,
+            zIndex: 1001
+        }
+    }
+}
+
+function hideStickerPreview() {
+    stickerPreview.value.show = false
 }
 
 function handleMessageAction(action, msg) {
@@ -1315,7 +1587,7 @@ function startResize(event) {
     isResizing.value = true
     startY.value = event.clientY
     startHeight.value = textareaRef.value.offsetHeight
-    
+
     document.addEventListener('mousemove', handleResize)
     document.addEventListener('mouseup', stopResize)
     document.body.style.userSelect = 'none'
@@ -1324,15 +1596,15 @@ function startResize(event) {
 
 function handleResize(event) {
     if (!isResizing.value) return
-    
+
     const deltaY = startY.value - event.clientY // 向上拖拽为正值
     const newHeight = startHeight.value + deltaY
-    
+
     // 限制最小和最大高度
     const minHeight = 40
     const maxHeight = 300
     const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight))
-    
+
     textareaRef.value.style.height = clampedHeight + 'px'
 }
 
@@ -1365,7 +1637,7 @@ function isMessageRead(messageId) {
     if (readMessageIds.value.has(messageId)) {
         return true
     }
-    
+
     // 然后检查消息对象本身的isRead属性
     const currentMessages = chatMessages.value[TOUUID.value] || []
     const message = currentMessages.find(msg => msg.messageId === messageId)
@@ -1395,7 +1667,7 @@ watch(TOUUID, (newUuid, oldUuid) => {
                 ackManager.markChatAsRead(newUuid, currentMessages)
             }
         })
-        
+
         // 如果切换到群聊，获取群聊成员信息
         if (currentChatType.value === 2 && newUuid) {
             getGroupMemberInfo(newUuid)
@@ -1436,6 +1708,7 @@ watch(() => document.hidden, (hidden) => {
 .create-group-btn:hover {
     background: #369870;
 }
+
 .add-friend-btn {
     background: var(--accent-color, #42b983);
     color: var(--text-primary, #fff);
@@ -1629,6 +1902,7 @@ watch(() => document.hidden, (hidden) => {
         opacity: 0;
         transform: scale(0.8) translateY(10px);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -1640,6 +1914,7 @@ watch(() => document.hidden, (hidden) => {
         opacity: 0;
         transform: scale(0.8) translateX(20px) translateY(10px);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) translateX(0) translateY(0);
@@ -1651,6 +1926,7 @@ watch(() => document.hidden, (hidden) => {
         opacity: 0;
         transform: scale(0.8) translateX(-20px) translateY(10px);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) translateX(0) translateY(0);
@@ -1659,9 +1935,13 @@ watch(() => document.hidden, (hidden) => {
 
 /* 打字动画效果 */
 @keyframes typing {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
         transform: translateY(0);
     }
+
     30% {
         transform: translateY(-10px);
     }
@@ -2009,6 +2289,7 @@ watch(() => document.hidden, (hidden) => {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -2050,6 +2331,94 @@ watch(() => document.hidden, (hidden) => {
     color: var(--primary-color, #5865f2);
 }
 
+/* 贴纸面板样式 */
+.sticker-panel {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    width: 300px;
+    max-height: 400px;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow: hidden;
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.sticker-header {
+    padding: 12px 16px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-bottom: 1px solid var(--border-color, #e3e5e8);
+    font-weight: 500;
+    color: var(--text-primary, #2c2c2c);
+    text-align: center;
+}
+
+.sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 16px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.sticker-item {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.sticker-item:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-color, #5865f2);
+    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.2);
+}
+
+.sticker-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 贴纸预览样式 */
+.sticker-preview {
+    position: absolute;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e3e5e8);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    animation: fadeInUp 0.2s ease-out;
+}
+
+.sticker-preview-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
 .more-btn:hover {
     background: rgba(108, 117, 125, 0.1);
     color: var(--text-primary, #2c2c2c);
@@ -2058,5 +2427,238 @@ watch(() => document.hidden, (hidden) => {
 /* 确保消息气泡在悬停时有足够的层级 */
 .message:hover .msg-bubble {
     z-index: 5;
+}
+
+/* 群信息面板样式 */
+.group-info-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: flex-end;
+    align-items: stretch;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.group-info-content {
+    width: 400px;
+    background: var(--bg-primary, #ffffff);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    animation: slideInRight 0.3s ease;
+}
+
+.group-info-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color, #e1e5e9);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-secondary, #f8f9fa);
+}
+
+.group-info-header h3 {
+    margin: 0;
+    color: var(--text-primary, #2c2c2c);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    color: var(--text-secondary, #6c757d);
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: var(--bg-hover, #e9ecef);
+    color: var(--text-primary, #2c2c2c);
+}
+
+.group-info-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.group-basic-info {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, #e1e5e9);
+}
+
+.group-basic-info h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary, #2c2c2c);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.group-stats {
+    margin: 0;
+    color: var(--text-secondary, #6c757d);
+    font-size: 14px;
+}
+
+.group-members-section h5 {
+    margin: 0 0 16px 0;
+    color: var(--text-primary, #2c2c2c);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.member-item:hover {
+    background: var(--bg-hover, #e9ecef);
+}
+
+.member-avatar {
+    position: relative;
+    margin-right: 12px;
+}
+
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-color, #5865f2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.status-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary, #ffffff);
+}
+
+.status-indicator.online {
+    background: #28a745;
+}
+
+.status-indicator.offline {
+    background: #6c757d;
+}
+
+.member-info {
+    flex: 1;
+}
+
+.member-name {
+    font-weight: 600;
+    color: var(--text-primary, #2c2c2c);
+    margin-bottom: 2px;
+}
+
+.member-status {
+    font-size: 12px;
+    color: var(--text-secondary, #6c757d);
+}
+
+.group-description {
+    background: var(--bg-secondary, #f8f9fa);
+    border: 1px solid var(--border-color, #e9ecef);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    transition: all 0.3s ease;
+}
+
+.group-description:hover {
+    background: var(--bg-hover, #f1f3f4);
+    border-color: var(--primary-color, #5865f2);
+    box-shadow: 0 2px 8px rgba(88, 101, 242, 0.1);
+}
+
+.group-description h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #2c2c2c);
+    display: flex;
+    align-items: center;
+}
+
+.group-description h3::before {
+    content: "📝";
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.group-description p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary, #6c757d);
+    background: var(--bg-primary, #ffffff);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-light, #f0f0f0);
+    min-height: 20px;
+}
+
+.group-description p:empty::before {
+    content: "暂无群组描述";
+    color: var(--text-muted, #adb5bd);
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .group-info-content {
+        width: 100%;
+        max-width: 400px;
+    }
 }
 </style>
