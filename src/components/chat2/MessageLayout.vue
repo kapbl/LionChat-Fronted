@@ -27,15 +27,6 @@
                             fill="currentColor"></path>
                     </svg>
                 </button>
-                <!-- 群聊查看群信息按钮 -->
-                <!-- <button v-if="currentChatType === 2" @click="showGroupInfoPanel" class="group-info-btn" title="查看群信息">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                </button> -->
                 <button @click="startVoiceCall" class="voice-call-btn" title="语音通话">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path
@@ -310,6 +301,16 @@
                             </div>
                         </div>
                     </div>
+                    <div class="group-actions-section">
+                        <button class="leave-group-btn" @click="leaveGroup" :disabled="leavingGroup">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16,17 21,12 16,7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            {{ leavingGroup ? '退出中...' : '退出群聊' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -486,6 +487,7 @@ const showTypingIndicator = ref(false)
 const showGroupInfo = ref(false)
 const groupMembers = ref([])
 const groupInfo = ref('')
+const leavingGroup = ref(false)
 
 // 群聊成员信息
 const groupMemberInfo = ref({
@@ -1427,11 +1429,6 @@ function sendStickerMessage(sticker) {
     ws.send(messageBuffer)
     if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
     chatMessages.value[TOUUID.value].push({...msgObj,timestamp: Date.now()})
-   
-
-    // // 本地也显示消息
-    // if (!chatMessages.value[TOUUID.value]) chatMessages.value[TOUUID.value] = []
-    // chatMessages.value[TOUUID.value].push({ ...msgObj, timestamp: Date.now() })
 }
 
 // 群信息面板相关函数
@@ -1488,6 +1485,63 @@ async function loadGroupMembers() {
         // }
     } catch (error) {
         console.error('获取群聊成员信息出错:', error)
+    }
+}
+
+// 退出群聊功能
+async function leaveGroup() {
+    if (!TOUUID.value || currentChatType.value !== 2) return
+    
+    const confirmLeave = confirm('确定要退出这个群聊吗？退出后将无法接收群消息。')
+    if (!confirmLeave) return
+    
+    leavingGroup.value = true
+    try {
+        const token = localStorage.getItem(`${sessionKey}`)
+        if (!token) {
+            console.error('未找到认证令牌')
+            return
+        }
+
+        const response = await fetch(`${API_BASE_URL}/v1/api/group/leave-group`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                groupUUID: TOUUID.value
+            })
+        })
+        
+        const data = await response.json()
+        console.log('退出群聊响应:', data)
+        
+        if (data.code === 0) {
+            // 退出成功，从群组列表中移除该群
+            const groupIndex = groups.value.findIndex(group => group.uuid === TOUUID.value)
+            if (groupIndex !== -1) {
+                groups.value.splice(groupIndex, 1)
+            }
+            
+            // 清除当前聊天
+            TOUUID.value = ''
+            currentChatTargetName.value = ''
+            currentChatType.value = 1
+            
+            // 关闭群信息面板
+            closeGroupInfoPanel()
+            
+            alert('已成功退出群聊')
+        } else {
+            console.error('退出群聊失败:', data.msg || '未知错误')
+            alert('退出群聊失败: ' + (data.msg || '未知错误'))
+        }
+    } catch (error) {
+        console.error('退出群聊出错:', error)
+        alert('退出群聊时发生错误，请稍后重试')
+    } finally {
+        leavingGroup.value = false
     }
 }
 
@@ -2652,6 +2706,56 @@ watch(() => document.hidden, (hidden) => {
     to {
         transform: translateX(0);
     }
+}
+
+/* 群操作区域样式 */
+.group-actions-section {
+    padding: 16px 0;
+    border-top: 1px solid var(--border-color, #e9ecef);
+    margin-top: 16px;
+}
+
+.leave-group-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--danger-color, #dc3545);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.leave-group-btn:hover:not(:disabled) {
+    background: var(--danger-hover, #c82333);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.leave-group-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.2);
+}
+
+.leave-group-btn:disabled {
+    background: var(--text-muted, #6c757d);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.leave-group-btn svg {
+    transition: transform 0.2s ease;
+}
+
+.leave-group-btn:hover:not(:disabled) svg {
+    transform: translateX(2px);
 }
 
 /* 响应式设计 */

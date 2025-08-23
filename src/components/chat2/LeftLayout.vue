@@ -914,8 +914,8 @@ async function createGroup() {
 }
 // 加入群组
 async function joinGroup() {
-    const name = newGroupName.value.trim()
-    if (!name) {
+    const targetGroup = newGroupName.value.trim()
+    if (!targetGroup) {
         showToastMessage('请输入群聊名称', 'warning')
         return
     }
@@ -929,8 +929,7 @@ async function joinGroup() {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                group_name: name,
-                group_uuid: group_uuid
+                target_group: targetGroup,
             })
         })
 
@@ -939,8 +938,8 @@ async function joinGroup() {
         if (data.code !== 0) throw new Error(data.msg || '加入失败')
         console.log(data)
         groups.value.push({
-            uuid: data.data.group_uuid,
-            name: data.data.group_name,
+            uuid: data.group_info.group_uuid,
+            name: data.group_info.group_name,
             unread: 0,
             isOwner: false  // 标识为群成员
         })

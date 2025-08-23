@@ -2,12 +2,12 @@ import { ref } from 'vue'
 import { loadAllMessages } from './messageStorage.js'
 
 // prod
-export const API_BASE_URL = 'https://chlion.lionchat.online'
-export const API_BASE_URL_WS = 'wss://chlion.lionchat.online'
+// export const API_BASE_URL = 'https://chlion.lionchat.online'
+// export const API_BASE_URL_WS = 'wss://chlion.lionchat.online'
 
 // dev
-// export const API_BASE_URL = 'http://localhost:9922'
-// export const API_BASE_URL_WS = 'ws://localhost:9922'
+export const API_BASE_URL = 'http://localhost:9922'
+export const API_BASE_URL_WS = 'ws://localhost:9922'
 
 
 // 用户信息全局变量
