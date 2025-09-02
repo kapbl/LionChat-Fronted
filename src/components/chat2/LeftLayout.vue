@@ -563,6 +563,14 @@
                                     </div>
                                     <span>护眼模式</span>
                                 </div>
+                                <div class="theme-option" :class="{ active: currentTheme === 'cyberpunk' }"
+                                    @click="setTheme('cyberpunk')">
+                                    <div class="theme-preview cyberpunk-preview">
+                                        <div class="preview-header"></div>
+                                        <div class="preview-content"></div>
+                                    </div>
+                                    <span>赛博朋克</span>
+                                </div>
                             </div>
                         </div>
 
@@ -3547,11 +3555,33 @@ function formatDeadline(deadline) {
 }
 
 .eye-care-preview .preview-header {
-    background: #f7f3e9;
+    background: #e8e0d0;
 }
 
 .eye-care-preview .preview-content {
-    background: #fefcf3;
+    background: #f7f3e9;
+}
+
+.cyberpunk-preview .preview-header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+}
+
+.cyberpunk-preview .preview-content {
+    background: linear-gradient(135deg, #0a0a0f, #1a1a2e);
+    position: relative;
+}
+
+.cyberpunk-preview .preview-content::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #00ffff;
+    border-radius: 50%;
+    box-shadow: 0 0 4px #00ffff;
 }
 
 .theme-option span {

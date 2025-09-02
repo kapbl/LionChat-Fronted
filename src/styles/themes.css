@@ -67,6 +67,79 @@
   --input-border: #d4c4a8;
 }
 
+/* 赛博朋克主题 */
+.cyberpunk-theme {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #16213e;
+  --text-primary: #00ffff;
+  --text-secondary: #ff00ff;
+  --text-muted: #888;
+  --border-color: #00ffff;
+  --shadow: rgba(0, 255, 255, 0.3);
+  --accent-color: #ff0080;
+  --accent-hover: #ff3399;
+  --accent-color-alpha: rgba(255, 0, 128, 0.2);
+  --bg-hover: rgba(0, 255, 255, 0.1);
+  --bg-disabled: #444;
+  --border-hover: #ff00ff;
+  --message-self: linear-gradient(135deg, #ff0080, #8000ff);
+  --message-other: linear-gradient(135deg, #00ffff, #0080ff);
+  --input-bg: #1a1a2e;
+  --input-border: #00ffff;
+}
+
+/* 赛博朋克主题特效 */
+.cyberpunk-theme {
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+}
+
+.cyberpunk-theme * {
+  text-shadow: 0 0 5px currentColor;
+}
+
+.cyberpunk-theme .nav-item:hover,
+.cyberpunk-theme .friend-item:hover,
+.cyberpunk-theme .group-item:hover {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  border: 1px solid #00ffff;
+  animation: cyberpunk-glow 2s ease-in-out infinite alternate;
+}
+
+.cyberpunk-theme .input-area button {
+  background: linear-gradient(45deg, #ff0080, #8000ff);
+  box-shadow: 0 0 20px rgba(255, 0, 128, 0.6);
+  animation: cyberpunk-pulse 1.5s ease-in-out infinite;
+}
+
+.cyberpunk-theme .message-bubble {
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.5);
+}
+
+@keyframes cyberpunk-glow {
+  from {
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
+  }
+}
+
+@keyframes cyberpunk-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 0, 128, 1);
+  }
+}
+
+.cyberpunk-theme .theme-option.active {
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  animation: cyberpunk-glow 2s ease-in-out infinite alternate;
+}
+
 /* 护眼模式增强 */
 .eye-care-enhanced {
   filter: sepia(0.1) saturate(0.8) brightness(0.95);
